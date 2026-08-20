@@ -6,7 +6,7 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 
 ## 🚀 Estado del Proyecto
 
-- [/] **Scanner (Analizador Léxico):** Conversión de texto a tokens, manejo de pila para sangría (`INDENT`/`DEDENT`) e ignorado de comentarios. *(En desarrollo)*
+- [x] **Scanner (Analizador Léxico):** Conversión de texto a tokens, manejo de pila para sangría (`INDENT`/`DEDENT`) e ignorado de comentarios. *(En desarrollo)*
 - [ ] **Parser (Analizador Sintáctico):** Construcción del Árbol de Sintaxis Abstracta (AST).
 - [ ] **Análisis Semántico:** Chequeo de tipos, tabla de símbolos y verificación de ámbitos.
 - [ ] **Generación de Código:** Traducción a ensamblador objetivo (RISC-V 32-bit / LLVM IR).
