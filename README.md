@@ -42,6 +42,8 @@ Para compilar el módulo del scanner junto con las pruebas unitarias usando `g++
 ```bash
 # Compilar el proyecto
 g++ -std=c++17 main.cpp Tests/testTokens.cpp scanner/*.cpp -I. -o test_tokens
+#nuevo
+g++ -std=c++17 main.cpp Tests/testTokens.cpp Tests/testLexer.cpp Scanner/*.cpp -I. -o test_tokens
 
 # Ejecutar el ejecutable generado
 ./test_tokens

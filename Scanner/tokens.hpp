@@ -1,3 +1,6 @@
+#ifndef SCANNER_TOKENS_HPP
+#define SCANNER_TOKENS_HPP
+// añadi define por error de redefinition of struct
 #include <string>
 
 // Todo esta en el manual del lenguaje https://chocopy.org/chocopy_language_reference.pdf en la seccion 3
@@ -69,3 +72,5 @@ struct Token {
 // Debug :C
 std::string tokenTypeToString(TokenType type);
 std::string tokenToString(const Token& token);
+
+#endif
