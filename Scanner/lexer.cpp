@@ -65,41 +65,150 @@ void Lexer::reportError(const std::string& message, int atLine, int atColumn) {
               << " (" << atLine << ":" << atColumn << ")\n";
 }
 
-Token Lexer::gettoken() {
-    // 1. Si hay tokens pendientes en la cola, los devolvemos antes de tocar el input.
-    if (!pendingTokens.empty()) {
-        Token t = pendingTokens.front();
-        pendingTokens.pop_front();
-        return t;
+void Lexer::skipComment() {
+    // Se asume que peekchar() == '#'. Consumimos hasta el '\n' o EOF,
+    // sin emitir ningun token: los comentarios no existen para el parser.
+    while (!isAtEnd() && peekchar() != '\n') {
+        getchar_();
     }
+}
 
-    // 2. Fin de archivo sin logica de reconocimiento aun
-    //    devolvemos endoffile una sola ves 
-    //A partir del paso 3 aca
-    //    tambien se debe vaciar la pila de indentacion antes de emitir este token.
-    if (isAtEnd()) {
-        if (!eofEmitted) {
-            eofEmitted = true;
-            return Token{TokenType::END_OF_FILE, "", Location{line, column}};
+void Lexer::flushIndentToZeroAndEOF() {
+    // Vaciamos la pila de indentacion (sec. 3.1.5): al llegar a EOF debe
+    // generarse un DEDENT por cada nivel que quedo abierto por encima de 0.
+    while (indentStack.size() > 1) {
+        indentStack.pop_back();
+        pendingTokens.push_back(Token{TokenType::DEDENT, "", Location{line, column}});
+    }
+    pendingTokens.push_back(Token{TokenType::END_OF_FILE, "", Location{line, column}});
+}
+
+void Lexer::handleLineStart() {
+    // Procesa lineas fisicas una tras otra hasta encontrar contenido real
+    // o el fin del archivo. Las lineas en blanco y las de solo-comentario
+    // (3.1.4) no generan NEWLINE ni afectan la indentacion.
+    for (;;) {
+        int n = 0;
+
+        // Medimos espacios de indentacion. Las tabulaciones se rechazan
+        // explicitamente (politica elegida para este scanner, sec.
+        // "Manejo de la indentacion" del enunciado): se reportan como
+        // error y se descartan sin contar hacia el nivel n.
+        for (;;) {
+            char c = peekchar();
+            if (c == ' ') {
+                getchar_();
+                ++n;
+            } else if (c == '\t') {
+                reportError("Tabulacion no permitida en la indentacion", line, column);
+                getchar_();
+            } else {
+                break;
+            }
         }
+
+        if (isAtEnd()) {
+            flushIndentToZeroAndEOF();
+            return;
+        }
+
+        char c = peekchar();
+
+        if (c == '\n') {
+            // Linea en blanco: se ignora por completo.
+            getchar_();
+            continue;
+        }
+
+        if (c == '#') {
+            skipComment();
+            if (peekchar() == '\n') {
+                getchar_();
+            }
+            // Si lo que sigue es EOF, la proxima vuelta del for(;;) lo detecta.
+            continue;
+        }
+
+        // Contenido real: aca se decide si hay INDENT, DEDENT o nada.
+        int top = indentStack.back();
+        if (n > top) {
+            indentStack.push_back(n);
+            pendingTokens.push_back(Token{TokenType::INDENT, "", Location{line, column}});
+        } else if (n < top) {
+            while (indentStack.back() > n) {
+                indentStack.pop_back();
+                pendingTokens.push_back(Token{TokenType::DEDENT, "", Location{line, column}});
+            }
+            if (indentStack.back() != n) {
+                reportError("Indentacion inconsistente: el nivel " + std::to_string(n) +
+                                " no coincide con ningun nivel de indentacion abierto",
+                            line, column);
+                // Recuperacion: resincronizamos la pila a este nivel nuevo
+                // para no arrastrar el mismo error en las lineas siguientes.
+                indentStack.push_back(n);
+            }
+        }
+        // n == top: incremento de indentacion nulo, no se emite nada.
+
+        atLineStart = false;
+        return;
     }
+}
 
-    // 3. Lo que falta
-    //    - saltar espacios/tabs intra-linea
-    //    - manejar comentarios (# hasta fin de linea)
-    //    - manejar indentacion al inicio de linea logica
-    //    - reconocer identificadores/keywords, numeros, strings
-    //    - reconocer operadores y delimitadores
-    //    temporal: consumimos un caracter y lo reportamos como error para dejar visible que falta implementar
 
-    int startLine = line;
-    int startColumn = column;
-    char c = getchar_();
-    if (c == '\0') {
-        return Token{TokenType::END_OF_FILE, "", Location{startLine, startColumn}};
+Token Lexer::gettoken() {
+    for (;;) {
+        // 1. Si hay tokens pendientes en la cola, los devolvemos antes de tocar el input.
+        if (!pendingTokens.empty()) {
+            Token t = pendingTokens.front();
+            pendingTokens.pop_front();
+            return t;
+        }
+
+        // 2. Inicio de linea logica: resolver indentacion / lineas en
+        //    blanco / lineas de solo-comentario antes de seguir.
+        if (atLineStart) {
+            handleLineStart();
+            continue; // vuelve a revisar la cola en el paso 1
+        }
+
+        // 3. Fin de archivo estando a mitad de una linea con contenido:
+        //    el EOF actua como terminador implicito (sec. 3.1.1).
+        if (isAtEnd()) {
+            pendingTokens.push_back(Token{TokenType::NEWLINE, "", Location{line, column}});
+            atLineStart = true; // la proxima vuelta disparara el flush de indentacion
+            continue;
+        }
+        char c = peekchar();
+
+        // 4. Espacios/tabs entre tokens (no al inicio de linea): se descartan.
+        if (c == ' ' || c == '\t') {
+            getchar_();
+            continue;
+        }
+
+        // 5. Comentario despues de tokens reales en la misma linea.
+        if (c == '#') {
+            skipComment();
+            continue;
+        }
+
+        // 6. Fin de la linea logica actual.
+        if (c == '\n') {
+            int startLine = line, startColumn = column;
+            getchar_();
+            atLineStart = true;
+            return Token{TokenType::NEWLINE, "\n", Location{startLine, startColumn}};
+        }
+
+        // 7. Lo que falta: identificadores/keywords, numeros,
+        //    strings, operadores y delimitadores. Placeholder temporal:
+        //    consumimos un caracter y lo reportamos como no manejado.
+        int startLine = line;
+        int startColumn = column;
+        char ch = getchar_();
+        reportError(std::string("Caracter aun no manejado por el scanner: '") + ch + "'",
+                    startLine, startColumn);
+        return Token{TokenType::UNKNOWN_ERROR, std::string(1, ch), Location{startLine, startColumn}};
     }
-
-    reportError(std::string("Caracter aun no manejado por el scanner: '") + c + "'",
-                startLine, startColumn);
-    return Token{TokenType::UNKNOWN_ERROR, std::string(1, c), Location{startLine, startColumn}};
 }

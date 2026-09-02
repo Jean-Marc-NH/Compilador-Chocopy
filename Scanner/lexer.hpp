@@ -6,8 +6,8 @@
 #include <vector>
 #include "tokens.hpp"
 
-//- Leer el archivo fuente completo a memoria.
-//- getchar_() y peekchar()
+//Leer el archivo fuente completo a memoria.
+//getchar_() y peekchar()
 
 
 class Lexer {
@@ -31,7 +31,7 @@ private:
 
     std::vector<int> indentStack{0}; // pila inicializada con el nivel 0
     bool atLineStart = true;         // true si el proximo caracter a leer inicia una linea logica
-    bool eofEmitted = false;         // true una vez que ya se devolvio END_OF_FILE
+    bool eofEmitted = false;         // true una vez que ya se devolvio endoffile
 
     int errors = 0;
 
@@ -48,6 +48,22 @@ private:
     void loadFile(const std::string& filename);
 
     void reportError(const std::string& message, int atLine, int atColumn);
+
+    // Se invoca cuando atLineStart == true. Recorre, internamente, todas
+    // las lineas fisicas en blanco o de solo-comentario hasta encontrar
+    // contenido real o EOF. Al encontrar contenido real, compara el nivel
+    // de indentacion contra el tope de 'indentStack' y encola INDENT/DEDENT
+    // segun corresponda, dejando atLineStart en false. Si llega a EOF sin
+    // encontrar contenido, delega en flushIndentToZeroAndEOF().
+    void handleLineStart();
+
+    // Consume caracteres desde '#' (asumido ya en peekchar()) hasta el
+    // siguiente '\n' o EOF, sin emitir ningun token.
+    void skipComment();
+
+    // Desapila 'indentStack' hasta dejar solo el nivel 0, encolando un
+    // DEDENT por cada nivel que se cierra, y finalmente encola END_OF_FILE.
+    void flushIndentToZeroAndEOF();
 };
 
 #endif

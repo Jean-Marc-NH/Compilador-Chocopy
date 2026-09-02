@@ -10,5 +10,6 @@ int main()
     test_token_def();
     //nuevo tester de lexer
     test_lexer_basico();
+    test_lexer_indentacion();  
     return 0;
 }
