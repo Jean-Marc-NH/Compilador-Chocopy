@@ -20,9 +20,11 @@ std::string tokenTypeToString(TokenType type) {
         case TokenType::KW_TRUE:      return "KW_TRUE";
         case TokenType::KW_FALSE:     return "KW_FALSE";
         case TokenType::KW_PASS:      return "KW_PASS";
+        case TokenType::KW_RESERVED:  return "KW_RESERVED";
         case TokenType::IDENTIFIER:   return "IDENTIFIER";
         case TokenType::INTEGER:      return "INTEGER";
         case TokenType::STRING:       return "STRING";
+        case TokenType::IDSTRING:     return "IDSTRING";
         case TokenType::PLUS:         return "PLUS";
         case TokenType::MINUS:        return "MINUS";
         case TokenType::STAR:         return "STAR";

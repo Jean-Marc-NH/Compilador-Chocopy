@@ -1,6 +1,6 @@
 #ifndef SCANNER_TOKENS_HPP
 #define SCANNER_TOKENS_HPP
-// añadi define por error de redefinition of struct
+
 #include <string>
 
 // Todo esta en el manual del lenguaje https://chocopy.org/chocopy_language_reference.pdf en la seccion 3
@@ -21,10 +21,23 @@ enum class TokenType {
     KW_RETURN, KW_FOR, KW_IN, KW_IS, KW_AND, KW_OR,
     KW_NOT, KW_NONE, KW_TRUE, KW_FALSE, KW_PASS,
 
+    // Palabras reservadas de Python 3 que ChocoPy reserva por compatibilidad
+    // (sec. 3.3) pero que no forman parte de su gramatica: as, assert,
+    // async, await, break, continue, del, except, finally, from, global,
+    // import, lambda, nonlocal, raise, try, with, yield. El scanner las
+    // reconoce como palabra clave (nunca como IDENTIFIER); es el parser
+    // quien decidira que su aparicion es un error sintactico.
+    KW_RESERVED,
+
     // Literales e Identificadores
     IDENTIFIER, // Nombres de variables
     INTEGER, // Numeros
     STRING, // Texto
+    // String cuyo contenido tiene sintaxis de identificador (sec. 3.4.1).
+    // La gramatica de ChocoPy los usa en anotaciones de tipo (type ::= ID
+    // | IDSTRING | [type]), asi que el scanner los distingue en el
+    // momento de reconocer el literal, no el parser.
+    IDSTRING,
 
     // Operadores y Puntuacion
     PLUS,         // +

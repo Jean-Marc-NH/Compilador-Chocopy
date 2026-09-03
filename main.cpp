@@ -4,12 +4,15 @@
 
 using namespace std;
 
-int main() 
-{
-
+int main() {
     test_token_def();
-    //nuevo tester de lexer
+
     test_lexer_basico();
-    test_lexer_indentacion();  
+    test_lexer_indentacion();
+    test_lexer_identificadores();
+    test_lexer_enteros();
+    test_lexer_strings();
+    test_lexer_operadores();
+
     return 0;
 }
