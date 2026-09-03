@@ -47,4 +47,11 @@ g++ -std=c++17 main.cpp Tests/testTokens.cpp Tests/testLexer.cpp Scanner/*.cpp -
 
 # Ejecutar el ejecutable generado
 ./test_tokens
+
+#Para probar un archivo.py
+g++ -std=c++17 -I. scan_file.cpp Scanner/lexer.cpp Scanner/tokens.cpp -o scan_file
+
+#Ejecutar el ejecutable con un .py
+./scan_file programa_prueba.py > resultado_programa_prueba.txt
+
 ```
