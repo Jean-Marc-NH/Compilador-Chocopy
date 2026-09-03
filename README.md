@@ -4,6 +4,13 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 
 ---
 
+## Integrantes del equipo:
+
+- Diaz Alvizuri, Luis Fabian
+- Nadeau Huamani, Jean Marc
+- Silva Murillo, Rodrigo Antonio
+- Valdivia Castillo, Jose Miguel
+
 ## 🚀 Estado del Proyecto
 
 - [x] **Scanner (Analizador Léxico):** Conversión de texto a tokens, manejo de pila para sangría (`INDENT`/`DEDENT`) e ignorado de comentarios. *(En desarrollo)*
