@@ -13,8 +13,8 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 
 ## 🚀 Estado del Proyecto
 
-- [x] **Scanner (Analizador Léxico):** Conversión de texto a tokens, manejo de pila para sangría (`INDENT`/`DEDENT`) e ignorado de comentarios. *(En desarrollo)*
-- [ ] **Parser (Analizador Sintáctico):** Construcción del Árbol de Sintaxis Abstracta (AST).
+- [x] **Scanner (Analizador Léxico):** Conversión de texto a tokens, manejo de pila para sangría (`INDENT`/`DEDENT`) e ignorado de comentarios. 
+- [x] **Parser (Analizador Sintáctico):** Construcción de la tabla LR(1). *(En desarrollo)*
 - [ ] **Análisis Semántico:** Chequeo de tipos, tabla de símbolos y verificación de ámbitos.
 - [ ] **Generación de Código:** Traducción a ensamblador objetivo (RISC-V 32-bit / LLVM IR).
 
@@ -30,6 +30,9 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 │   └── lexer.hpp / .cpp         # Motor del Scanner (AFD y consumo de fuente)
 ├── Tests/                       # Pruebas unitarias y muestras de código ChocoPy
 │   └── testTokens.hpp / .cpp    # Pruebas del tokenizador
+├── Tests/
+│   └── generador.hpp / .cpp     # Se encarga de generar la tabla de la gramatica
+│   └── Parser.hpp / .cpp 
 ├── main.cpp                     # Punto de entrada principal
 └── README.md                    # Documentación del proyecto
 ```
