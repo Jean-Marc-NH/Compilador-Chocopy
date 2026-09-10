@@ -30,7 +30,7 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 │   └── lexer.hpp / .cpp         # Motor del Scanner (AFD y consumo de fuente)
 ├── Tests/                       # Pruebas unitarias y muestras de código ChocoPy
 │   └── testTokens.hpp / .cpp    # Pruebas del tokenizador
-├── Tests/
+├── Parser/
 │   └── generador.hpp / .cpp     # Se encarga de generar la tabla de la gramatica
 │   └── Parser.hpp / .cpp 
 ├── main.cpp                     # Punto de entrada principal
