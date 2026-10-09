@@ -64,4 +64,10 @@ g++ -std=c++17 -I. scan_file.cpp Scanner/lexer.cpp Scanner/tokens.cpp -o scan_fi
 #Ejecutar el ejecutable con un .py
 ./scan_file programa_prueba.py > resultado_programa_prueba.txt
 
+
+LR(!)
+
+g++ -std=c++17 -Wall -Wextra -pedantic main.cpp generador.cpp -o lr1
+./lr1 gramatica.txt
+
 ```
