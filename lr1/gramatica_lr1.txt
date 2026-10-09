@@ -1,0 +1,4 @@
+# LR(1) canonica, pero no LALR(1): no se deben fusionar los nucleos.
+S > aAd bAf aBf bBd
+A > c
+B > c

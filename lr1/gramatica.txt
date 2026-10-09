@@ -1,0 +1,5 @@
+# Tu ejemplo: espacios separan alternativas.
+START' > START
+START > hAh H c
+A > c
+H > h

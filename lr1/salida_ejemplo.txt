@@ -1,0 +1,44 @@
+PRODUCCIONES (0 es la regla aumentada)
+0: START' > START 
+1: START > h A h 
+2: START > H 
+3: START > c 
+4: A > c 
+5: H > h 
+
+ESTADOS LR(1)
+I0:
+  [START' > . START , $]
+  [START > . h A h , $]
+  [START > . H , $]
+  [START > . c , $]
+  [H > . h , $]
+I1:
+  [START > H . , $]
+I2:
+  [START' > START . , $]
+I3:
+  [START > c . , $]
+I4:
+  [START > h . A h , $]
+  [A > . c , h]
+  [H > h . , $]
+I5:
+  [START > h A . h , $]
+I6:
+  [A > c . , h]
+I7:
+  [START > h A h . , $]
+
+TABLA LR(1): ACTION (terminales) | GOTO (no terminales)
+Estado  c           h           $           | A           H           START       
+0       shift 3     shift 4     -           | -           1           2           
+1       -           -           reduce 2    | -           -           -           
+2       -           -           accept      | -           -           -           
+3       -           -           reduce 3    | -           -           -           
+4       shift 6     -           reduce 5    | 5           -           -           
+5       -           shift 7     -           | -           -           -           
+6       -           reduce 4    -           | -           -           -           
+7       -           -           reduce 1    | -           -           -           
+
+Sin conflictos: la gramatica es LR(1).
