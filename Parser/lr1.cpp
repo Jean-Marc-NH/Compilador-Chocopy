@@ -7,22 +7,36 @@
 
 namespace lr1 {
 namespace {
-struct Lexeme { std::string text; bool quoted = false; };
+    
+struct Lexeme { 
+    std::string text; 
+    bool quoted = false;
+};
+
 std::string trim(const std::string& s) {
     const auto a = s.find_first_not_of(" \t\r\n");
     return a == std::string::npos ? "" : s.substr(a, s.find_last_not_of(" \t\r\n") - a + 1);
 }
-// Symbols are whitespace-delimited. Quotes allow literal |, -> and epsilon names.
+// "A -> ( A ) | a" -> ["A", "->", "(", "A", ")", "|", "a"]
 std::vector<Lexeme> lex(const std::string& text, bool grammar) {
     std::vector<Lexeme> out;
     std::size_t i = 0;
+    
     while (i < text.size()) {
-        if (std::isspace(static_cast<unsigned char>(text[i]))) { ++i; continue; }
+        if (std::isspace(static_cast<unsigned char>(text[i]))) { 
+            ++i; continue;
+        }
         if (text[i] == '\'' || text[i] == '"') {
-            const char quote = text[i++]; std::string value; bool closed = false;
+            const char quote = text[i++];
+            std::string value;
+            bool closed = false;
+
             while (i < text.size()) {
                 char c = text[i++];
-                if (c == quote) { closed = true; break; }
+                if (c == quote) {
+                    closed = true;
+                    break;
+                }
                 if (c == '\\') {
                     if (i == text.size()) throw std::runtime_error("Escape incompleto en simbolo entre comillas.");
                     c = text[i++];
@@ -30,7 +44,11 @@ std::vector<Lexeme> lex(const std::string& text, bool grammar) {
                 value += c;
             }
             if (!closed) throw std::runtime_error("Comillas sin cerrar.");
-            out.push_back({value, true});
+            out.push_back({
+                value,
+                true
+            });
+
         } else if (grammar && (text.compare(i, 2, "->") == 0 || text.compare(i, 3, "→") == 0)) {
             out.push_back({"->", false}); i += text[i] == '-' ? 2 : 3;
         } else if (grammar && text[i] == '|') {
@@ -44,9 +62,15 @@ std::vector<Lexeme> lex(const std::string& text, bool grammar) {
     }
     return out;
 }
+
 bool epsilon(const Lexeme& t) {
-    return t.text.empty() || (!t.quoted && (t.text == "ε" || t.text == "epsilon" || t.text == "eps"));
+    return t.text.empty() ||
+           (!t.quoted &&
+            (t.text == "ε" ||
+             t.text == "epsilon" ||
+             t.text == "eps"));
 }
+
 std::string symbol(const std::string& s) {
     if (s.find_first_of(" \t\r\n|\"\\") == std::string::npos && s != "->" && s != "→" &&
         s != "ε" && s != "eps" && s != "epsilon" && (s.empty() || s.front() != '\'')) return s;
