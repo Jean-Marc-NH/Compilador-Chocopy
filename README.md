@@ -62,3 +62,19 @@ g++ -std=c++17 -I. scan_file.cpp Scanner/lexer.cpp Scanner/tokens.cpp -o scan_fi
 ./scan_file programa_prueba.py > resultado_programa_prueba.txt
 
 ```
+
+## Laboratorio de parser LR(1)
+
+El generador LR(1) canónico en `Parser/` recibe una gramática configurable y muestra
+FIRST, estados I0/I1/…, núcleos, cierres, transiciones, ACTION/GOTO y
+seguimiento de entradas. El motor es C++17 y la interfaz es Python/Tkinter.
+
+```bash
+python3 Parser/gui.py
+# Pruebas del motor
+make -C Parser test
+```
+
+La interfaz compila el motor automáticamente al construir las tablas.
+Consulta [Parser/README.md](Parser/README.md) para el formato de entrada,
+los ejemplos y la CLI. Este laboratorio todavía no integra la gramática de ChocoPy con el scanner.

@@ -1,0 +1,5 @@
+# Los simbolos de cada produccion se separan por espacios.
+S -> G
+G -> A | B
+A -> ( A ) | a
+B -> ( B > | b
