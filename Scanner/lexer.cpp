@@ -1,4 +1,5 @@
 #include "lexer.hpp"
+#include "diagnostico.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -71,13 +72,13 @@ const std::unordered_map<std::string, TokenType>& keywordTable() {
         {"finally",  TokenType::KW_RESERVED},
         {"for",      TokenType::KW_FOR},
         {"from",     TokenType::KW_RESERVED},
-        {"global",   TokenType::KW_RESERVED},
+        {"global",   TokenType::KW_GLOBAL},
         {"if",       TokenType::KW_IF},
         {"import",   TokenType::KW_RESERVED},
         {"in",       TokenType::KW_IN},
         {"is",       TokenType::KW_IS},
         {"lambda",   TokenType::KW_RESERVED},
-        {"nonlocal", TokenType::KW_RESERVED},
+        {"nonlocal", TokenType::KW_NONLOCAL},
         {"not",      TokenType::KW_NOT},
         {"or",       TokenType::KW_OR},
         {"pass",     TokenType::KW_PASS},
@@ -93,7 +94,7 @@ const std::unordered_map<std::string, TokenType>& keywordTable() {
 
 } // namespace
 
-Lexer::Lexer(const std::string& filename) {
+Lexer::Lexer(const std::string& filename) : filename(filename) {
     loadFile(filename);
 }
 
@@ -102,7 +103,7 @@ void Lexer::loadFile(const std::string& filename) {
     if (!file) {
         // No hay parser todavia esperando tokens: informamos y dejamos
         // 'source' vacio, gettoken() devolvera END_OF_FILE de inmediato.
-        std::cerr << "ERROR SCAN - No se pudo abrir el archivo: " << filename << "\n";
+        imprimirErrorGeneral(std::cerr, filename, "no se pudo abrir el archivo");
         return;
     }
 
@@ -152,10 +153,26 @@ char Lexer::getchar_() {
     return c;
 }
 
-void Lexer::reportError(const std::string& message, int atLine, int atColumn) {
+bool Lexer::sourceLine(int n, std::string& out) const {
+    if (n < 1) return false;
+    size_t start = 0;
+    for (int i = 1; i < n; ++i) {
+        size_t newline = source.find('\n', start);
+        if (newline == std::string::npos) return false;
+        start = newline + 1;
+    }
+    if (start >= source.size()) return false; // la linea 'n' esta despues del final
+    size_t end = source.find('\n', start);
+    out = source.substr(start, end == std::string::npos ? std::string::npos : end - start);
+    return true;
+}
+
+void Lexer::reportError(const std::string& message, int atLine, int atColumn, int length) {
     ++errors;
-    std::cerr << "ERROR SCAN - " << message
-              << " (" << atLine << ":" << atColumn << ")\n";
+    std::string text;
+    bool hasText = sourceLine(atLine, text);
+    imprimirDiagnostico(std::cerr, filename, atLine, atColumn, length, "error", message,
+                        hasText ? &text : nullptr);
 }
 
 void Lexer::skipComment() {
@@ -193,7 +210,7 @@ void Lexer::handleLineStart() {
                 getchar_();
                 ++n;
             } else if (c == '\t') {
-                reportError("Tabulacion no permitida en la indentacion", line, column);
+                reportError("no se permiten tabuladores para indentar: usa espacios", line, column);
                 getchar_();
             } else {
                 break;
@@ -233,8 +250,8 @@ void Lexer::handleLineStart() {
                 pendingTokens.push_back(Token{TokenType::DEDENT, "", Location{line, column}});
             }
             if (indentStack.back() != n) {
-                reportError("Indentacion inconsistente: el nivel " + std::to_string(n) +
-                                " no coincide con ningun nivel de indentacion abierto",
+                reportError("la indentacion de esta linea (" + std::to_string(n) +
+                                " espacios) no coincide con la de ningun bloque anterior",
                             line, column);
                 // Recuperacion: resincronizamos la pila a este nivel nuevo
                 // para no arrastrar el mismo error en las lineas siguientes.
@@ -284,9 +301,8 @@ Token Lexer::scanInteger() {
     // Regla de ceros a la izquierda (sec. 3.4.2): "0" solo es valido,
     // pero "0" seguido de mas digitos no lo es (ej. "007").
     if (lexeme.size() > 1 && lexeme[0] == '0') {
-        reportError("Literal entero invalido (ceros a la izquierda no permitidos): '" +
-                        lexeme + "'",
-                    startLine, startColumn);
+        reportError("'" + lexeme + "' no es un numero valido: un entero no puede empezar con 0",
+                    startLine, startColumn, static_cast<int>(lexeme.size()));
         return Token{TokenType::UNKNOWN_ERROR, lexeme, loc};
     }
 
@@ -300,9 +316,9 @@ Token Lexer::scanInteger() {
     }
 
     if (outOfRange) {
-        reportError("Literal entero fuera de rango (maximo " + INT32_MAX_STR + "): '" +
-                        lexeme + "'",
-                    startLine, startColumn);
+        reportError("el numero " + lexeme + " es demasiado grande: el maximo permitido es " +
+                        INT32_MAX_STR,
+                    startLine, startColumn, static_cast<int>(lexeme.size()));
         return Token{TokenType::UNKNOWN_ERROR, lexeme, loc};
     }
 
@@ -321,8 +337,8 @@ Token Lexer::scanString() {
 
     for (;;) {
         if (isAtEnd()) {
-            reportError("Cadena sin cerrar: se llego a fin de archivo antes de la comilla de cierre",
-                        startLine, startColumn);
+            reportError("falta la comilla de cierre (\") de esta cadena: el archivo termina antes",
+                        startLine, startColumn, column - startColumn);
             break;
         }
 
@@ -337,8 +353,8 @@ Token Lexer::scanString() {
         if (c == '\n') {
             // No consumimos el '\n': el manejo de NEWLINE/indentacion lo
             // necesita intacto para no romper el conteo de lineas.
-            reportError("Cadena sin cerrar: se llego a fin de linea antes de la comilla de cierre",
-                        startLine, startColumn);
+            reportError("falta la comilla de cierre (\") de esta cadena antes del fin de la linea",
+                        startLine, startColumn, column - startColumn);
             break;
         }
 
@@ -346,8 +362,8 @@ Token Lexer::scanString() {
             int escLine = line, escColumn = column; // posicion de la barra invertida
             getchar_();
             if (isAtEnd()) {
-                reportError("Cadena sin cerrar: secuencia de escape incompleta al final del archivo",
-                            startLine, startColumn);
+                reportError("la cadena termina con una barra '\\' incompleta y le falta la comilla de cierre (\")",
+                            startLine, startColumn, column - startColumn);
                 break;
             }
             char esc = getchar_();
@@ -357,9 +373,9 @@ Token Lexer::scanString() {
                 case 't':  content.push_back('\t'); break;
                 case '\\': content.push_back('\\'); break;
                 default:
-                    reportError(std::string("Secuencia de escape invalida: '\\") + esc +
-                                    "' (solo se permiten \\\", \\n, \\t, \\\\)",
-                                escLine, escColumn);
+                    reportError(std::string("secuencia de escape '\\") + esc +
+                                    "' no valida: solo se permiten \\\", \\n, \\t y \\\\",
+                                escLine, escColumn, 2);
                     // Recuperacion: descartamos la barra y dejamos el
                     // caracter tal cual, para poder seguir escaneando.
                     content.push_back(esc);
@@ -371,8 +387,8 @@ Token Lexer::scanString() {
         // Caracter regular: debe estar en el rango ASCII imprimible 32-126 (sec. 3.4.1).
         int code = static_cast<unsigned char>(c);
         if (code < 32 || code > 126) {
-            reportError("Caracter no permitido dentro de un literal de cadena "
-                        "(fuera del rango ASCII 32-126)",
+            reportError("caracter no permitido dentro de la cadena: solo se aceptan "
+                        "caracteres ASCII imprimibles",
                         line, column);
             getchar_(); // se descarta y seguimos buscando el cierre
             continue;
@@ -380,8 +396,8 @@ Token Lexer::scanString() {
 
         if (content.size() >= MAX_STRING_LEN) {
             if (!exceededLength) {
-                reportError("Literal de cadena excede el tamano maximo permitido (" +
-                                std::to_string(MAX_STRING_LEN) + " caracteres)",
+                reportError("la cadena es demasiado larga: el maximo es " +
+                                std::to_string(MAX_STRING_LEN) + " caracteres",
                             startLine, startColumn);
                 exceededLength = true;
             }
@@ -449,8 +465,7 @@ Token Lexer::scanOperatorOrDelimiter() {
                 getchar_();
                 return make(TokenType::SLASH_SLASH, "//");
             }
-            reportError("Operador mal formado: '/' (ChocoPy solo tiene division entera '//', "
-                        "no division real)",
+            reportError("'/' no existe en ChocoPy: para dividir enteros usa '//'",
                         startLine, startColumn);
             return error("/");
 
@@ -484,16 +499,24 @@ Token Lexer::scanOperatorOrDelimiter() {
                 getchar_();
                 return make(TokenType::BANG_EQ, "!=");
             }
-            reportError("Operador mal formado: '!' no seguido de '=' "
-                        "(ChocoPy solo tiene el operador '!=')",
+            reportError("'!' solo es valido dentro de '!=' (distinto de); para negar usa 'not'",
                         startLine, startColumn);
             return error("!");
 
         // --- Cualquier otro simbolo no pertenece a la especificacion de
         //     ningun token de ChocoPy (p. ej. '@', '$', ';', '&', '|'). ---
         default:
-            reportError(std::string("Simbolo no reconocido: '") + c + "'",
-                        startLine, startColumn);
+            if (c == ';') {
+                reportError("';' no se usa en ChocoPy: escribe una sola sentencia por linea",
+                            startLine, startColumn);
+            } else if (static_cast<unsigned char>(c) >= 128) {
+                reportError("caracter no ASCII: ChocoPy solo admite caracteres ASCII "
+                            "fuera de los comentarios",
+                            startLine, startColumn);
+            } else {
+                reportError(std::string("el caracter '") + c + "' no es valido en ChocoPy",
+                            startLine, startColumn);
+            }
             return error(std::string(1, c));
     }
 }

@@ -1,1 +1,0 @@
-"cow" "Hello World" ""

@@ -1,0 +1,7 @@
+# Salida de compilacion y archivos temporales de los tests
+build/
+*.exe
+_tmp_*.py
+
+# Carpeta de descartes pendientes de borrar
+_papelera/

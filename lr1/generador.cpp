@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -51,6 +53,14 @@ static std::vector<std::string> separarSimbolos(const std::string& texto,
                 throw std::runtime_error("No terminal sin produccion en: " + texto);
             simbolos.push_back(elegido);
             posicion += elegido.size();
+        } else if (caracter == '{') {
+            // Terminal con nombre largo, p. ej. {KW_IF}: es el mismo texto que
+            // devuelve tokenTypeToString() para el token del scanner.
+            auto cierre = texto.find('}', posicion);
+            if (cierre == std::string::npos || cierre == posicion + 1)
+                throw std::runtime_error("Terminal sin cerrar o vacio en: " + texto);
+            simbolos.push_back(texto.substr(posicion + 1, cierre - posicion - 1));
+            posicion = cierre + 1;
         } else {
             if (caracter == 'e' || caracter == '$' || caracter == '\'' || caracter == '>')
                 throw std::runtime_error("Simbolo reservado o invalido en: " + texto);
@@ -166,6 +176,33 @@ ConjuntosFirst calcularFirst(const Gramatica& gramatica) {
     return first;
 }
 
+ConjuntosFollow calcularFollow(const Gramatica& gramatica, const ConjuntosFirst& first) {
+    ConjuntosFollow follow;
+    for (const auto& simbolo : gramatica.noTerminales) follow[simbolo] = {};
+    follow[gramatica.producciones.front().izquierdo].insert("$");
+    bool cambio = true;
+    while (cambio) {
+        cambio = false;
+        for (const auto& produccion : gramatica.producciones) {
+            const auto& derecho = produccion.derecho;
+            for (std::size_t i = 0; i < derecho.size(); ++i) {
+                if (!gramatica.noTerminales.count(derecho[i])) continue;
+                // Para A > alfa B beta: FIRST(beta) - {e} va a FOLLOW(B), y si
+                // beta puede ser vacio tambien entra FOLLOW(A).
+                std::vector<std::string> resto(derecho.begin() + i + 1, derecho.end());
+                auto primeros = firstSecuencia(resto, first);
+                auto& destino = follow[derecho[i]];
+                for (const auto& terminal : primeros)
+                    if (terminal != "e" && destino.insert(terminal).second) cambio = true;
+                if (primeros.count("e"))
+                    for (const auto& terminal : follow[produccion.izquierdo])
+                        if (destino.insert(terminal).second) cambio = true;
+            }
+        }
+    }
+    return follow;
+}
+
 Estado cierre(const Estado& estado, const Gramatica& gramatica,
               const ConjuntosFirst& first) {
     Estado resultado = estado;
@@ -243,6 +280,107 @@ TablaLR1 generarTabla(const Gramatica& gramatica) {
         if (celda.second.size() > 1)
             tabla.conflictos.push_back("Conflicto en estado " + std::to_string(celda.first.first) +
                                       ", simbolo " + celda.first.second);
+    tabla.cantidadEstados = static_cast<int>(tabla.estados.size());
+    return tabla;
+}
+
+// Sube este numero cuando cambie el algoritmo de generacion o el formato del
+// archivo, para invalidar las caches viejas.
+static const char* const VERSION_CACHE = "LR1CACHE 1";
+
+std::string huellaGramatica(const std::string& textoGramatica) {
+    // FNV-1a de 64 bits: suficiente para detectar que la gramatica cambio.
+    std::uint64_t hash = 14695981039346656037ULL;
+    for (unsigned char caracter : textoGramatica) {
+        hash ^= caracter;
+        hash *= 1099511628211ULL;
+    }
+    std::ostringstream hex;
+    hex << std::hex << std::setw(16) << std::setfill('0') << hash;
+    return std::string(VERSION_CACHE) + " " + hex.str();
+}
+
+// Formato (texto, una celda por linea):
+//   <huella>
+//   E <cantidadEstados>
+//   A <estado> <terminal> <accion con espacios, ej. "shift 3">
+//   G <estado> <no terminal> <destino>
+//   C <texto del conflicto>
+//   FIN
+// El FIN final detecta archivos truncados.
+bool guardarTabla(const TablaLR1& tabla, const std::string& ruta, const std::string& huella) {
+    std::filesystem::path destino(ruta);
+    if (destino.has_parent_path()) {
+        std::error_code error;
+        std::filesystem::create_directories(destino.parent_path(), error);
+    }
+    std::ofstream salida(ruta, std::ios::trunc);
+    if (!salida) return false;
+    salida << huella << "\n";
+    salida << "E " << tabla.cantidadEstados << "\n";
+    for (const auto& celda : tabla.action)
+        for (const auto& accion : celda.second)
+            salida << "A " << celda.first.first << ' ' << celda.first.second << ' ' << accion << "\n";
+    for (const auto& celda : tabla.tablaGoto)
+        salida << "G " << celda.first.first << ' ' << celda.first.second << ' ' << celda.second << "\n";
+    for (const auto& conflicto : tabla.conflictos) salida << "C " << conflicto << "\n";
+    salida << "FIN\n";
+    return static_cast<bool>(salida);
+}
+
+bool cargarTabla(const std::string& ruta, const std::string& huella, TablaLR1& tabla) {
+    std::ifstream entrada(ruta);
+    if (!entrada) return false;
+    std::string linea;
+    if (!std::getline(entrada, linea) || linea != huella) return false;
+
+    TablaLR1 leida;
+    bool completa = false;
+    while (std::getline(entrada, linea)) {
+        if (linea == "FIN") {
+            completa = true;
+            break;
+        }
+        std::istringstream campos(linea);
+        std::string tipo;
+        campos >> tipo;
+        if (tipo == "E") {
+            if (!(campos >> leida.cantidadEstados)) return false;
+        } else if (tipo == "A") {
+            int estado;
+            std::string simbolo;
+            if (!(campos >> estado >> simbolo)) return false;
+            std::string accion;
+            std::getline(campos >> std::ws, accion);
+            if (accion.empty()) return false;
+            leida.action[{estado, simbolo}].insert(accion);
+        } else if (tipo == "G") {
+            int estado, destino;
+            std::string simbolo;
+            if (!(campos >> estado >> simbolo >> destino)) return false;
+            leida.tablaGoto[{estado, simbolo}] = destino;
+        } else if (tipo == "C") {
+            std::string conflicto;
+            std::getline(campos >> std::ws, conflicto);
+            leida.conflictos.push_back(conflicto);
+        } else return false;
+    }
+    if (!completa) return false;
+    tabla = std::move(leida);
+    return true;
+}
+
+TablaLR1 obtenerTabla(const Gramatica& gramatica, const std::string& textoGramatica,
+                      const std::string& rutaCache, bool& desdeCache, bool forzar) {
+    const std::string huella = huellaGramatica(textoGramatica);
+    TablaLR1 tabla;
+    if (!forzar && cargarTabla(rutaCache, huella, tabla)) {
+        desdeCache = true;
+        return tabla;
+    }
+    desdeCache = false;
+    tabla = generarTabla(gramatica);
+    guardarTabla(tabla, rutaCache, huella); // Si no se puede escribir, solo se pierde la cache.
     return tabla;
 }
 

@@ -21,10 +21,14 @@ enum class TokenType {
     KW_RETURN, KW_FOR, KW_IN, KW_IS, KW_AND, KW_OR,
     KW_NOT, KW_NONE, KW_TRUE, KW_FALSE, KW_PASS,
 
+    // global y nonlocal si forman parte de la gramatica (global_decl y
+    // nonlocal_decl dentro de func_body, sec. 4), asi que tienen su propio token.
+    KW_GLOBAL, KW_NONLOCAL,
+
     // Palabras reservadas de Python 3 que ChocoPy reserva por compatibilidad
     // (sec. 3.3) pero que no forman parte de su gramatica: as, assert,
-    // async, await, break, continue, del, except, finally, from, global,
-    // import, lambda, nonlocal, raise, try, with, yield. El scanner las
+    // async, await, break, continue, del, except, finally, from,
+    // import, lambda, raise, try, with, yield. El scanner las
     // reconoce como palabra clave (nunca como IDENTIFIER); es el parser
     // quien decidira que su aparicion es un error sintactico.
     KW_RESERVED,

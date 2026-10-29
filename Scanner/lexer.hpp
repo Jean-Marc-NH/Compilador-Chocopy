@@ -31,7 +31,16 @@ public:
     // Cantidad de errores lexicos detectados durante el escaneo.
     int errorCount() const { return errors; }
 
+    // Nombre del archivo tal como se paso al constructor (para los mensajes).
+    const std::string& fileName() const { return filename; }
+
+    // Texto de la linea 'n' (1 = primera) del codigo fuente, sin el salto de
+    // linea. Devuelve false si esa linea no existe. Sirve para mostrar el
+    // codigo junto a cada mensaje de error.
+    bool sourceLine(int n, std::string& out) const;
+
 private:
+    std::string filename;
     // --- Estado del buffer de entrada ---
     std::string source;   // contenido completo del archivo (line endings normalizados a '\n')
     size_t pos = 0;        // indice del proximo caracter a leer en 'source'
@@ -62,8 +71,10 @@ private:
     // Carga 'filename' completo en 'source', normalizando \r\n y \r a \n.
     void loadFile(const std::string& filename);
 
-    // Reporta un error lexico con mensaje, linea y columna. Incrementa 'errors'.
-    void reportError(const std::string& message, int atLine, int atColumn);
+    // Reporta un error lexico con mensaje, linea y columna, mostrando la linea
+    // de codigo con el subrayado de 'length' caracteres (ver diagnostico.hpp).
+    // Incrementa 'errors'.
+    void reportError(const std::string& message, int atLine, int atColumn, int length = 1);
 
     // --- Indentacion (paso 3) ---
     // Se invoca cuando atLineStart == true. Recorre, internamente, todas

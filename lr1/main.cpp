@@ -4,7 +4,7 @@
 
 int main(int cantidad, char* argumentos[]) {
     try {
-        std::string ruta = cantidad > 1 ? argumentos[1] : "gramatica.txt";
+        std::string ruta = cantidad > 1 ? argumentos[1] : "lr1/ejemplos/gramatica.txt";
         auto gramatica = parsearGramatica(leerArchivo(ruta));
         auto tabla = generarTabla(gramatica);
         mostrarProducciones(gramatica, std::cout);
