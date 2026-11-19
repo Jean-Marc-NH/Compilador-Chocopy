@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "../Scanner/tokens.hpp"
+#include "Scanner/tokens.hpp"
 
 // Traduce un error sintactico (el token que llego y los terminales que el
 // parser habria aceptado) a un mensaje que entienda quien escribe el
@@ -15,7 +15,7 @@ struct ExplicacionError {
     int largo = 1;             // ancho del subrayado en el codigo
     bool hayNota = false;      // nota secundaria que apunta a otro lugar
     std::string notaMensaje;   // p. ej. "el '(' abierto aqui nunca se cierra"
-    Location notaPos{};
+    Posicion notaPos{};
     int notaLargo = 1;
 };
 
@@ -33,6 +33,6 @@ std::string describirToken(const Token& token);
 // Posicion justo despues de 'token' en su linea. Los mensajes de "falta algo
 // al final de la linea" senalan ahi en vez de en el salto de linea, que queda
 // lejos cuando la linea termina con un comentario.
-Location posicionDespuesDe(const Token& token);
+Posicion posicionDespuesDe(const Token& token);
 
 #endif

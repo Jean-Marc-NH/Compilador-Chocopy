@@ -24,41 +24,45 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 
 ```text
 .
-├── Scanner/                     # Módulo del analizador léxico
-│   ├── tokens.hpp / .cpp        # Definiciones de Token, TokenType y funciones auxiliares
-│   ├── indentacion.hpp / .cpp   # Manejo del algoritmo de sangría basado en pila
-│   ├── diagnostico.hpp / .cpp   # Formato de los mensajes de error (estilo g++: línea de código y ^)
-│   └── lexer.hpp / .cpp         # Motor del Scanner (AFD y consumo de fuente)
-├── lr1/                         # Generador de tablas LR(1)
-│   ├── generador.hpp / .cpp     # Lee la gramática y construye estados, ACTION y GOTO
-│   ├── main.cpp                 # Herramienta para imprimir producciones, estados y tabla
-│   └── ejemplos/                # Gramáticas pequeñas de ejemplo (con y sin conflictos)
-├── Parser/                      # Analizador sintáctico (Scanner + tabla LR(1))
-│   ├── parser.hpp / .cpp        # Shift/reduce que consume tokens del Lexer + recuperación de errores en modo pánico
+├── Scanner/                     # Analizador léxico
+│   ├── tokens.hpp / .cpp        # TipoToken, Token y Posicion (+ funciones para imprimirlos)
+│   └── lexer.hpp / .cpp         # AnalizadorLexico: AFD, indentación con pila (INDENT/DEDENT) y errores léxicos
+├── Comun/
+│   └── diagnostico.hpp / .cpp   # Formato de los mensajes de error (estilo g++: línea de código y ^)
+├── GeneradorLR1/                # Generador de tablas LR(1)
+│   ├── gramatica.hpp / .cpp     # Lee la gramática desde un .txt (producciones, terminales, aumentada)
+│   ├── conjuntos.hpp / .cpp     # Conjuntos FIRST y FOLLOW
+│   ├── tabla.hpp / .cpp         # Items LR(1), cierre, goto y tablas ACTION / GOTO
+│   └── cache.hpp / .cpp         # Guarda la tabla en build/cache/ para no regenerarla cada vez
+├── Parser/                      # Analizador sintáctico
+│   ├── parser.hpp / .cpp        # AnalizadorSintactico: shift/reduce + recuperación de errores en modo pánico
 │   ├── arbol.hpp                # NodoParse: árbol de derivación que arma el parser
-│   ├── mensajes.hpp / .cpp      # Traduce los errores de sintaxis a mensajes para el usuario
-│   ├── gramatica_chocopy.txt    # Gramática de ChocoPy para el generador
-│   ├── gramatica_chocopy_espacios.txt  # La misma gramática, con espacios para leerla mejor
-│   └── referencia/              # Language Reference de ChocoPy (PDF y texto)
+│   └── mensajes.hpp / .cpp      # Traduce los errores de sintaxis a mensajes para el usuario
 ├── AST/                         # Árbol de sintaxis abstracta
-│   ├── ast.hpp / .cpp           # Nodos de ChocoPy (Program, FuncDef, Binary, ...)
-│   ├── ast_builder.hpp / .cpp   # Convierte el árbol de derivación en el AST
-│   └── ast_print.hpp / .cpp     # Volcado de texto y exportación a JSON
+│   ├── nodos.hpp / .cpp         # Nodos de ChocoPy (Programa, DefFuncion, OpBinaria, ...)
+│   ├── constructor.hpp / .cpp   # Convierte el árbol de derivación en el AST
+│   └── impresion.hpp / .cpp     # Volcado de texto y exportación a JSON
+├── Gramaticas/
+│   ├── chocopy.txt              # Gramática de ChocoPy que usa el parser
+│   ├── chocopy_espacios.txt     # La misma gramática, con espacios para leerla mejor
+│   └── ejemplos/                # Gramáticas pequeñas de ejemplo (con y sin conflictos)
+├── Herramientas/                # Programas con su propio main
+│   ├── escanear.cpp             # Imprime los tokens de un .py
+│   ├── analizar.cpp             # Scanner + Parser (+ AST) sobre un .py
+│   └── lr1.cpp                  # Imprime producciones, estados y tabla de una gramática
+├── Pruebas/                     # Pruebas unitarias y programas ChocoPy de ejemplo
+│   ├── correr_pruebas.cpp       # main que corre todas las pruebas
+│   ├── prueba_tokens.*          # Representación de tokens
+│   ├── prueba_lexer.*           # Scanner, un grupo de casos por cada paso
+│   ├── prueba_ast.*             # Parser + AST
+│   ├── prueba_errores.*         # Mensajes de error
+│   └── programas/               # Programa_valido.py se acepta sin errores; errores/ tiene casos con errores sintácticos
 ├── Visualizador/
 │   └── ast_grafico.py           # Dibuja el AST (HTML/SVG interactivo, solo biblioteca estándar de Python)
-├── Drivers/                     # Programas standalone para probar los módulos
-│   ├── scan_file.cpp            # Imprime los tokens de un .py
-│   └── parse_file.cpp           # Scanner + Parser sobre un .py
-├── Tests/                       # Pruebas unitarias y muestras de código ChocoPy
-│   ├── testTokens.hpp / .cpp    # Pruebas del tokenizador
-│   ├── testLexer.hpp / .cpp     # Pruebas del lexer
-│   ├── testAST.hpp / .cpp       # Pruebas de parser + AST
-│   ├── testErrores.hpp / .cpp   # Pruebas de los mensajes de error
-│   └── programas/               # Programas .py de ejemplo (Programa_valido.py se acepta sin errores;
-│                                #   errores/ tiene casos con errores sintácticos)
-├── main.cpp                     # Ejecuta las pruebas unitarias
-├── build/                       # Ejecutables, caché de la tabla LR(1) y temporales de los tests (ignorado por git)
-└── README.md                    # Documentación del proyecto
+├── Documentacion/               # Language Reference de ChocoPy (PDF y texto)
+├── Makefile
+├── build/                       # Ejecutables, caché de la tabla LR(1) y temporales de las pruebas (ignorado por git)
+└── README.md
 ```
 
 ---
@@ -68,41 +72,49 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 ### Requisitos Previos
 * **Compilador con soporte C++17:** `g++` (>= 8.0), `clang++` (>= 7.0) o MSVC.
 * **Sistema Operativo:** Linux, macOS o Windows (MinGW-w64 / MSYS2).
+* **Python 3** (opcional), solo para el visualizador del AST.
 
 ### Compilación y Ejecución
 
-Para compilar el módulo del scanner junto con las pruebas unitarias usando `g++`:
+Todo se compila con el `Makefile` y los ejecutables quedan en `build/`. Hay que correrlos **desde la carpeta del
+proyecto**, porque buscan `Gramaticas/chocopy.txt` en la ruta actual. En Windows `make` se llama `mingw32-make`.
 
 ```bash
-# Todos los ejecutables se generan en build/ (ignorado por git)
+make              # compila todo en build/
+make pruebas      # compila y corre las pruebas
+make limpiar      # borra build/
+```
+
+Sin `make`, los mismos comandos a mano (en Windows agrega `-static` al final):
+
+```bash
 mkdir -p build
+g++ -std=c++17 -O2 -I. Pruebas/*.cpp Scanner/*.cpp Comun/*.cpp GeneradorLR1/*.cpp Parser/*.cpp AST/*.cpp -o build/pruebas
+g++ -std=c++17 -O2 -I. Herramientas/escanear.cpp Scanner/*.cpp Comun/*.cpp -o build/escanear
+g++ -std=c++17 -O2 -I. Herramientas/analizar.cpp Scanner/*.cpp Comun/*.cpp GeneradorLR1/*.cpp Parser/*.cpp AST/*.cpp -o build/analizar
+g++ -std=c++17 -O2 -I. Herramientas/lr1.cpp GeneradorLR1/*.cpp -o build/lr1
+```
 
-# Compilar y correr las pruebas unitarias
-g++ -std=c++17 main.cpp Tests/testTokens.cpp Tests/testLexer.cpp Tests/testAST.cpp Tests/testErrores.cpp Scanner/*.cpp Parser/parser.cpp Parser/mensajes.cpp lr1/generador.cpp AST/*.cpp -I. -o build/test_tokens
-./build/test_tokens
+```bash
+# Pruebas unitarias
+./build/pruebas
 
-# Para probar un archivo .py con el scanner
-g++ -std=c++17 -I. Drivers/scan_file.cpp Scanner/lexer.cpp Scanner/tokens.cpp Scanner/diagnostico.cpp -o build/scan_file
-./build/scan_file Tests/programas/Programa_prueba.py > build/resultado_programa_prueba.txt
-
+# Solo el scanner: imprime los tokens de un .py
+./build/escanear Pruebas/programas/Programa_prueba.py > build/resultado_programa_prueba.txt
 
 # Scanner + Parser juntos (genera la tabla LR(1) y analiza un .py)
-g++ -O2 -static -std=c++17 -I. Drivers/parse_file.cpp Parser/parser.cpp Parser/mensajes.cpp lr1/generador.cpp Scanner/lexer.cpp Scanner/tokens.cpp Scanner/identacion.cpp Scanner/diagnostico.cpp AST/*.cpp -o build/parse_file
-./build/parse_file Tests/programas/Programa_prueba.py     # usa Parser/gramatica_chocopy.txt
-./build/parse_file Tests/programas/Programa_prueba.py -v  # imprime cada shift/reduce y cada recuperación
-./build/parse_file Tests/programas/errores/varios_errores.py   # varios errores sintácticos en una corrida
-./build/parse_file programa.py --sin-recuperacion         # se detiene en el primer error
-./build/parse_file programa.py --regenerar                # ignora la caché y regenera la tabla
+./build/analizar Pruebas/programas/Programa_prueba.py     # usa Gramaticas/chocopy.txt
+./build/analizar Pruebas/programas/Programa_prueba.py -v  # imprime cada shift/reduce y cada recuperación
+./build/analizar Pruebas/programas/errores/varios_errores.py   # varios errores sintácticos en una corrida
+./build/analizar programa.py --sin-recuperacion          # se detiene en el primer error
+./build/analizar programa.py --regenerar                 # ignora la caché y regenera la tabla
 
 # La tabla LR(1) se genera solo la primera vez y se guarda en build/cache/ (~1.8 s -> ~0.04 s);
 # se regenera sola si cambia el texto de la gramática.
 
-
-# Mensajes de error y los 4 errores de ejemplo: ver la sección "Probar errores" más abajo
-
 # AST: solo se genera si el programa se acepta sin errores
-./build/parse_file Tests/programas/Programa_valido.py --ast                  # lo imprime como texto indentado
-./build/parse_file Tests/programas/Programa_valido.py --ast-json build/ast.json   # lo guarda en JSON
+./build/analizar Pruebas/programas/Programa_valido.py --ast                      # lo imprime como texto indentado
+./build/analizar Pruebas/programas/Programa_valido.py --ast-json build/ast.json  # lo guarda en JSON
 
 # Gráfico del AST (Python 3, sin instalar nada): genera build/ast.html con zoom y arrastre
 python Visualizador/ast_grafico.py build/ast.json --abrir
@@ -113,12 +125,22 @@ python Visualizador/ast_grafico.py build/ast.json -o build/ast.svg    # SVG suel
 # El gráfico se genera a partir de build/ast.json: si el programa tiene errores no se escribe un
 # JSON nuevo y verías el árbol del programa anterior. Usa un programa válido (Programa_valido.py).
 
-
 # Generador LR(1) por separado (imprime producciones, estados y tabla)
-g++ -std=c++17 -Wall -Wextra -pedantic -I. lr1/main.cpp lr1/generador.cpp -o build/lr1
-./build/lr1 lr1/ejemplos/gramatica.txt
-
+./build/lr1 Gramaticas/ejemplos/gramatica.txt
 ```
+
+---
+
+## ✍️ Convenciones del Código
+
+- Todo el código está en español: clases (`AnalizadorLexico`, `AnalizadorSintactico`, `DefFuncion`...), funciones
+  (`siguienteToken()`, `parsear()`, `construirAST()`...), variables y comentarios. Los comentarios van sin tildes.
+- Se mantienen los términos del curso: token, scanner, parser, AST, FIRST/FOLLOW, ACTION/GOTO, shift/reduce.
+- Los nombres de los tokens (`KW_IF`, `IDENTIFIER`, `NEWLINE`...) se dejan como en el enunciado porque también son los
+  terminales de la gramática (`Gramaticas/chocopy.txt` los escribe entre llaves, por ejemplo `{KW_IF}`). Si se cambia
+  uno en `Scanner/tokens.hpp` hay que cambiarlo también en la gramática.
+- Cada `.hpp` explica qué hace cada función y cita la sección del Language Reference cuando aplica (sec. 3.4.1, ...).
+- Los `#include` se escriben desde la raíz del proyecto (`#include "Scanner/lexer.hpp"`) y se compila con `-I.`.
 
 ---
 
@@ -128,11 +150,11 @@ Los mensajes de error siguen el estilo de `g++`: archivo, línea y columna, la l
 problema, y notas que apuntan a otro lugar relacionado. Están escritos para quien programa, no para quien diseña
 el compilador: no hablan de tokens ni del parser.
 
-`Tests/programas/Programa_prueba.py` trae **4 errores intencionales** (marcados con `# ERROR n`) para mostrar que
+`Pruebas/programas/Programa_prueba.py` trae **4 errores intencionales** (marcados con `# ERROR n`) para mostrar que
 el compilador los reconoce todos y sigue analizando el resto sin detenerse:
 
 ```bash
-./build/parse_file Tests/programas/Programa_prueba.py
+./build/analizar Pruebas/programas/Programa_prueba.py
 ```
 
 ```text
@@ -158,7 +180,7 @@ Para ver el programa sin errores, borra las 4 líneas marcadas (en el `ERROR 1`,
 Opciones útiles: `-v` agrega el detalle técnico (estado del autómata, terminales esperados y cada paso de la
 recuperación); `--sin-recuperacion` se detiene en el primer error.
 
-Cada mensaje tiene una prueba automática en `Tests/testErrores.cpp` (se corre con `./build/test_tokens`): errores
+Cada mensaje tiene una prueba automática en `Pruebas/prueba_errores.cpp` (se corre con `./build/pruebas`): errores
 léxicos (carácter inválido, cadena sin cerrar, entero demasiado grande, `;`, `/`, sangría inconsistente) y de sintaxis
 (paréntesis sin cerrar o de más, falta `:`, falta un valor, `else` sin `if`, `+=`, palabras reservadas de Python,
 definiciones después de sentencias...). Un error léxico se informa una sola vez: el error de sintaxis que sería su
@@ -176,10 +198,10 @@ En PowerShell, `python` suele apuntar al atajo de la Microsoft Store ("Python wa
 ```bat
 cd C:\Users\TuUsuario\Documents\GitHub\Compilador-Chocopy
 
-build\parse_file.exe Tests\programas\Programa_valido.py --ast-json build\ast.json
+build\analizar.exe Pruebas\programas\Programa_valido.py --ast-json build\ast.json
 python Visualizador\ast_grafico.py build\ast.json --abrir
 ```
 
-- Corre `parse_file` desde la carpeta del proyecto: busca `Parser\gramatica_chocopy.txt` en la ruta actual.
+- Corre `analizar` desde la carpeta del proyecto: busca `Gramaticas\chocopy.txt` en la ruta actual.
 - Si el dibujo sale muy grande, mira solo una función: `python Visualizador\ast_grafico.py build\ast.json --solo suma_lista --abrir`.
 - Alternativa en PowerShell, con la ruta completa a tu Python: `& "C:\Users\TuUsuario\miniconda3\python.exe" Visualizador/ast_grafico.py build/ast.json --abrir`.

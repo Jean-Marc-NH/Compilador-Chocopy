@@ -6,7 +6,7 @@ arbol dibujado en SVG, con zoom (rueda), desplazamiento (arrastrar), y un
 tooltip con la posicion de cada nodo. No usa librerias externas: solo la
 biblioteca estandar de Python 3.
 
-    ./build/parse_file programa.py --ast-json build/ast.json
+    ./build/analizar programa.py --ast-json build/ast.json
     python Visualizador/ast_grafico.py build/ast.json --abrir
 
 Opciones:
@@ -25,16 +25,17 @@ import sys
 import webbrowser
 
 # Categorias de nodos. Cada una tiene su color (definido en el CSS, con
-# variantes clara y oscura) y la lista de tipos de nodo que agrupa.
+# variantes clara y oscura) y la lista de clases de nodo que agrupa (los
+# nombres de AST/nodos.hpp).
 CATEGORIAS = [
-    ("Definiciones", ["Program", "VarDef", "FuncDef", "ClassDef", "TypedVar", "GlobalDecl", "NonlocalDecl"]),
-    ("Tipos", ["Type", "ListType"]),
-    ("Sentencias", ["Pass", "Return", "ExprStmt", "Assign", "If", "While", "For"]),
-    ("Expresiones", ["Binary", "Unary", "IfExpr", "Call", "Member", "Index", "ListLit"]),
-    ("Nombres", ["Id"]),
-    ("Literales", ["IntLit", "StrLit", "BoolLit", "NoneLit"]),
+    ("Definiciones", ["Programa", "DefVariable", "DefFuncion", "DefClase", "VarTipada", "DeclGlobal", "DeclNonlocal"]),
+    ("Tipos", ["Tipo", "TipoLista"]),
+    ("Sentencias", ["Pasar", "Retornar", "SentenciaExpr", "Asignacion", "Si", "Mientras", "Para"]),
+    ("Expresiones", ["OpBinaria", "OpUnaria", "ExprSi", "Llamada", "Miembro", "Indice", "LitLista"]),
+    ("Nombres", ["Identificador"]),
+    ("Literales", ["LitEntero", "LitTexto", "LitBool", "LitNone"]),
 ]
-CATEGORIA_DE = {kind: nombre for nombre, kinds in CATEGORIAS for kind in kinds}
+CATEGORIA_DE = {clase: nombre for nombre, clases in CATEGORIAS for clase in clases}
 CATEGORIA_DEFECTO = "Otros"
 
 # Medidas del dibujo, en pixeles SVG.
@@ -50,19 +51,19 @@ MAX_TEXTO = 40
 
 def etiqueta(nodo):
     """(tipo, texto) que se muestra dentro de la caja."""
-    texto = nodo.get("text", "").replace("\n", "\\n")
+    texto = nodo.get("texto", "").replace("\n", "\\n")
     if len(texto) > MAX_TEXTO:
         texto = texto[:MAX_TEXTO - 3] + "..."
     if nodo.get("_podado"):
         texto = texto + " ..." if texto else "..."
-    return nodo["kind"], texto
+    return nodo["clase"], texto
 
 
 def buscar(nodo, nombre):
     """Primer nodo (en profundidad) cuyo texto o tipo es 'nombre'."""
-    if nodo.get("text") == nombre or nodo["kind"] == nombre:
+    if nodo.get("texto") == nombre or nodo["clase"] == nombre:
         return nodo
-    for hijo in nodo["children"]:
+    for hijo in nodo["hijos"]:
         encontrado = buscar(hijo, nombre)
         if encontrado:
             return encontrado
@@ -70,11 +71,11 @@ def buscar(nodo, nombre):
 
 
 def podar(nodo, limite, profundidad=0):
-    if profundidad >= limite and nodo["children"]:
-        nodo["children"] = []
+    if profundidad >= limite and nodo["hijos"]:
+        nodo["hijos"] = []
         nodo["_podado"] = True
         return
-    for hijo in nodo["children"]:
+    for hijo in nodo["hijos"]:
         podar(hijo, limite, profundidad + 1)
 
 
@@ -88,10 +89,10 @@ def disenar(raiz):
     def recorrer(nodo, profundidad):
         nodo["_d"] = profundidad
         nodos.append(nodo)
-        for hijo in nodo["children"]:
+        for hijo in nodo["hijos"]:
             recorrer(hijo, profundidad + 1)
-        if nodo["children"]:
-            nodo["_y"] = (nodo["children"][0]["_y"] + nodo["children"][-1]["_y"]) / 2
+        if nodo["hijos"]:
+            nodo["_y"] = (nodo["hijos"][0]["_y"] + nodo["hijos"][-1]["_y"]) / 2
         else:
             nodo["_y"] = contador[0]
             contador[0] += 1
@@ -122,21 +123,21 @@ def dibujar_svg(raiz):
 
     aristas, roles, cajas = [], [], []
     for nodo in nodos:
-        for hijo in nodo["children"]:
+        for hijo in nodo["hijos"]:
             xa, ya = nodo["_px"] + nodo["_w"], nodo["_py"]
             xb, yb = hijo["_px"], hijo["_py"]
             xm = (xa + xb) / 2
             aristas.append('<path d="M%.1f,%.1f C%.1f,%.1f %.1f,%.1f %.1f,%.1f"/>'
                            % (xa, ya, xm, ya, xm, yb, xb, yb))
-            if hijo.get("role"):
+            if hijo.get("rol"):
                 roles.append('<text x="%.1f" y="%.1f" text-anchor="end">%s</text>'
-                             % (xb - 7, yb - 5, html.escape(hijo["role"])))
+                             % (xb - 7, yb - 5, html.escape(hijo["rol"])))
 
         tipo, texto = etiqueta(nodo)
-        categoria = CATEGORIA_DE.get(nodo["kind"], CATEGORIA_DEFECTO)
+        categoria = CATEGORIA_DE.get(nodo["clase"], CATEGORIA_DEFECTO)
         pista = "%s%s  (linea %s, columna %s)" % (
-            nodo["kind"], " " + nodo.get("text", "") if nodo.get("text") else "",
-            nodo.get("line", "?"), nodo.get("col", "?"))
+            nodo["clase"], " " + nodo.get("texto", "") if nodo.get("texto") else "",
+            nodo.get("linea", "?"), nodo.get("col", "?"))
         tx = nodo["_px"] + RELLENO_X
         partes = ['<g class="nodo cat-%s%s"><title>%s</title>'
                   % (categoria, " podado" if nodo.get("_podado") else "", html.escape(pista)),
@@ -254,7 +255,7 @@ main.arrastrando { cursor:grabbing; }
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Dibuja el AST de ChocoPy (JSON de parse_file --ast-json).")
+    ap = argparse.ArgumentParser(description="Dibuja el AST de ChocoPy (JSON de analizar --ast-json).")
     ap.add_argument("json", help="archivo JSON generado con --ast-json")
     ap.add_argument("-o", "--salida", help="archivo de salida (.html o .svg)")
     ap.add_argument("--solo", metavar="NOMBRE", help="dibuja solo el subarbol de ese nodo")
@@ -283,7 +284,7 @@ def main():
         svg = svg.replace(">", "><style>%s</style>" % ESTILO, 1)
         contenido = '<?xml version="1.0" encoding="UTF-8"?>\n' + svg
     else:
-        usadas = {CATEGORIA_DE.get(n["kind"], CATEGORIA_DEFECTO) for n in nodos}
+        usadas = {CATEGORIA_DE.get(n["clase"], CATEGORIA_DEFECTO) for n in nodos}
         leyenda = "".join(
             '<span><i style="background:var(--%s-f);border-color:var(--%s-b)"></i>%s</span>' % (n, n, n)
             for n in [c for c, _ in CATEGORIAS] + [CATEGORIA_DEFECTO] if n in usadas)

@@ -4,19 +4,22 @@
 #include <string>
 
 // Todo esta en el manual del lenguaje https://chocopy.org/chocopy_language_reference.pdf en la seccion 3
-// Seccion 3 Lexical Estructure se divide en
+// (copia en Documentacion/). La seccion 3 "Lexical Structure" se divide en:
 /*
-    Estructuras de linea (Control de estructura) NewLine, Ident y Dedent
-    KeyWords -> Palabras reservadas como else, if, etc
+    Estructuras de linea (control de estructura) -> NEWLINE, INDENT y DEDENT
+    Palabras clave -> palabras reservadas como else, if, etc
     Operadores -> todos los operadores admitidos (20) + - //, etc
-    Literales -> tipo de datos (3) texto numero y variables
-
-
+    Literales -> tipos de datos (3): texto, numero y variables
 */
+//
+// Los nombres de los tipos de token (KW_IF, IDENTIFIER, ...) se dejan como
+// en el enunciado porque son tambien los terminales de la gramatica
+// (Gramaticas/chocopy.txt los escribe entre llaves, por ejemplo {KW_IF}).
+// Si se cambia un nombre aca hay que cambiarlo tambien en la gramatica.
 
-enum class TokenType {
+enum class TipoToken {
 
-    // Palabras clave (Colocamos KW para evitar conflictos de lenguaje)
+    // Palabras clave (colocamos KW para evitar conflictos con el lenguaje)
     KW_CLASS, KW_DEF, KW_IF, KW_ELIF, KW_ELSE, KW_WHILE,
     KW_RETURN, KW_FOR, KW_IN, KW_IS, KW_AND, KW_OR,
     KW_NOT, KW_NONE, KW_TRUE, KW_FALSE, KW_PASS,
@@ -30,24 +33,24 @@ enum class TokenType {
     // async, await, break, continue, del, except, finally, from,
     // import, lambda, raise, try, with, yield. El scanner las
     // reconoce como palabra clave (nunca como IDENTIFIER); es el parser
-    // quien decidira que su aparicion es un error sintactico.
+    // quien decide que su aparicion es un error sintactico.
     KW_RESERVED,
 
-    // Literales e Identificadores
-    IDENTIFIER, // Nombres de variables
-    INTEGER, // Numeros
-    STRING, // Texto
+    // Literales e identificadores
+    IDENTIFIER, // nombres de variables
+    INTEGER,    // numeros
+    STRING,     // texto
     // String cuyo contenido tiene sintaxis de identificador (sec. 3.4.1).
     // La gramatica de ChocoPy los usa en anotaciones de tipo (type ::= ID
     // | IDSTRING | [type]), asi que el scanner los distingue en el
     // momento de reconocer el literal, no el parser.
     IDSTRING,
 
-    // Operadores y Puntuacion
+    // Operadores y puntuacion
     PLUS,         // +
     MINUS,        // -
     STAR,         // *
-    SLASH_SLASH,  // // 
+    SLASH_SLASH,  // //
     PERCENT,      // %
     EQ_EQ,        // ==
     BANG_EQ,      // !=
@@ -65,29 +68,32 @@ enum class TokenType {
     RBRACKET,     // ]
     ARROW,        // ->
 
-    // Control de Estructura
+    // Control de estructura
     NEWLINE,
     INDENT,
     DEDENT,
 
-    // Tokens Especiales
+    // Tokens especiales
     END_OF_FILE,
     UNKNOWN_ERROR
 };
 
-struct Location {
-    int line = 1;
-    int column = 1;
+// Linea y columna donde empieza un token (las dos empiezan en 1).
+struct Posicion {
+    int linea = 1;
+    int columna = 1;
 };
 
 struct Token {
-    TokenType type;
-    std::string lexeme;
-    Location location;
+    TipoToken tipo;
+    std::string lexema;
+    Posicion posicion;
 };
 
-// Debug :C
-std::string tokenTypeToString(TokenType type);
-std::string tokenToString(const Token& token);
+// Para depurar :C
+// tipoTokenATexto(KW_DEF) -> "KW_DEF"
+// tokenATexto(...)        -> Token(KW_DEF, "def", L1:C1)
+std::string tipoTokenATexto(TipoToken tipo);
+std::string tokenATexto(const Token& token);
 
 #endif
