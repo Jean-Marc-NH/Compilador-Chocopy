@@ -9,7 +9,6 @@ Compilador modular para **ChocoPy** (un subconjunto estáticamente tipado de Pyt
 - Diaz Alvizuri, Luis Fabian
 - Nadeau Huamani, Jean Marc
 - Silva Murillo, Rodrigo Antonio
-- Valdivia Castillo, Jose Miguel
 
 ## 🚀 Estado del Proyecto
 
