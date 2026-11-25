@@ -354,8 +354,10 @@ python Visualizador\ast_grafico.py build\ast.json --abrir
 
 ## 🎤 Guía para la exposición
 
-La división de temas entre los tres integrantes (qué archivos y funciones debe dominar cada uno, demo, cambio en vivo
-y preguntas probables) está en [`Documentacion/division_exposicion.md`](Documentacion/division_exposicion.md).
+[`Documentacion/division_exposicion.md`](Documentacion/division_exposicion.md) tiene dos partes: lo que los tres
+deben saber (scanner, generador LR(1) y parser) y la división de la rúbrica final y de los temas de la carpeta Final
+(AST, tablas de símbolos, chequeo semántico y back end) entre los integrantes, con archivos, demos, cambios en vivo y
+conceptos.
 
 Comandos listos para mostrar cada criterio de la rúbrica (desde la carpeta del proyecto):
 
