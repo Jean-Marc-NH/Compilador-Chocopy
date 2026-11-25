@@ -354,6 +354,9 @@ python Visualizador\ast_grafico.py build\ast.json --abrir
 
 ## 🎤 Guía para la exposición
 
+La división de temas entre los tres integrantes (qué archivos y funciones debe dominar cada uno, demo, cambio en vivo
+y preguntas probables) está en [`Documentacion/division_exposicion.md`](Documentacion/division_exposicion.md).
+
 Comandos listos para mostrar cada criterio de la rúbrica (desde la carpeta del proyecto):
 
 **Integración (un solo ejecutable).** Una sola corrida recorre todas las fases y muestra cada una con su prefijo `INFO`.
