@@ -15,6 +15,8 @@ Opciones:
     --solo NOMBRE    dibuja solo el subarbol del primer nodo cuyo nombre o
                      tipo sea NOMBRE (por ejemplo una funcion: --solo suma_lista)
     --profundidad N  limita la profundidad; los nodos recortados salen con "..."
+    --sin-tipos      no muestra el tipo (": int", etc.) dentro de las cajas; util
+                     si el dibujo queda muy ancho (el tooltip sigue mostrando el tipo)
     --abrir          abre el resultado en el navegador
 """
 import argparse
@@ -49,14 +51,16 @@ MARGEN = 28
 MAX_TEXTO = 40
 
 
-def etiqueta(nodo):
-    """(tipo, texto) que se muestra dentro de la caja."""
+def etiqueta(nodo, mostrar_tipos=True):
+    """(clase, texto, tipo) que se muestran dentro de la caja. El tipo sale
+    vacio si no se deben mostrar los tipos o si el nodo no tiene (JSON viejo)."""
     texto = nodo.get("texto", "").replace("\n", "\\n")
     if len(texto) > MAX_TEXTO:
         texto = texto[:MAX_TEXTO - 3] + "..."
     if nodo.get("_podado"):
         texto = texto + " ..." if texto else "..."
-    return nodo["clase"], texto
+    tipo = nodo.get("tipo", "") if mostrar_tipos else ""
+    return nodo["clase"], texto, tipo
 
 
 def buscar(nodo, nombre):
@@ -79,10 +83,11 @@ def podar(nodo, limite, profundidad=0):
         podar(hijo, limite, profundidad + 1)
 
 
-def disenar(raiz):
+def disenar(raiz, mostrar_tipos=True):
     """Asigna a cada nodo su profundidad '_d', su fila '_y' (las hojas ocupan
     filas consecutivas y cada padre se centra entre sus hijos) y su ancho
-    '_w'. Devuelve (nodos, filas, ancho de cada columna)."""
+    '_w' (que incluye el tipo si se muestra). Devuelve (nodos, filas, ancho
+    de cada columna)."""
     nodos = []
     contador = [0]
 
@@ -100,15 +105,17 @@ def disenar(raiz):
     recorrer(raiz, 0)
     ancho_columna = {}
     for nodo in nodos:
-        tipo, texto = etiqueta(nodo)
-        nodo["_w"] = (len(tipo) + (1 + len(texto) if texto else 0)) * ANCHO_CAR + 2 * RELLENO_X
+        clase, texto, tipo = etiqueta(nodo, mostrar_tipos)
+        prefijo = len(clase) + (1 + len(texto) if texto else 0)
+        # El tipo se dibuja como " : tipo": un espacio, los dos puntos y el tipo.
+        nodo["_w"] = (prefijo + (len(tipo) + 3 if tipo else 0)) * ANCHO_CAR + 2 * RELLENO_X
         ancho_columna[nodo["_d"]] = max(ancho_columna.get(nodo["_d"], 0), nodo["_w"])
     return nodos, contador[0], ancho_columna
 
 
-def dibujar_svg(raiz):
+def dibujar_svg(raiz, mostrar_tipos=True):
     """Devuelve (svg, ancho, alto, nodos)."""
-    nodos, filas, ancho_columna = disenar(raiz)
+    nodos, filas, ancho_columna = disenar(raiz, mostrar_tipos)
 
     x, x_columna = MARGEN, {}
     for profundidad in range(max(ancho_columna) + 1):
@@ -133,22 +140,30 @@ def dibujar_svg(raiz):
                 roles.append('<text x="%.1f" y="%.1f" text-anchor="end">%s</text>'
                              % (xb - 7, yb - 5, html.escape(hijo["rol"])))
 
-        tipo, texto = etiqueta(nodo)
+        clase, texto, tipo = etiqueta(nodo, mostrar_tipos)
         categoria = CATEGORIA_DE.get(nodo["clase"], CATEGORIA_DEFECTO)
         pista = "%s%s  (linea %s, columna %s)" % (
             nodo["clase"], " " + nodo.get("texto", "") if nodo.get("texto") else "",
             nodo.get("linea", "?"), nodo.get("col", "?"))
+        if nodo.get("tipo"):
+            pista += ", tipo " + nodo["tipo"]
         tx = nodo["_px"] + RELLENO_X
+        # Caracteres que ocupan la clase y el texto; aqui empieza el tipo.
+        prefijo = len(clase) + (1 + len(texto) if texto else 0)
         partes = ['<g class="nodo cat-%s%s"><title>%s</title>'
                   % (categoria, " podado" if nodo.get("_podado") else "", html.escape(pista)),
                   '<rect x="%.1f" y="%.1f" width="%.1f" height="%d" rx="8"/>'
                   % (nodo["_px"], nodo["_py"] - ALTO_CAJA / 2, nodo["_w"], ALTO_CAJA),
-                  '<text class="tipo" x="%.1f" y="%.1f" textLength="%.1f" lengthAdjust="spacingAndGlyphs">%s</text>'
-                  % (tx, nodo["_py"] + 4.5, len(tipo) * ANCHO_CAR, html.escape(tipo))]
+                  '<text class="clase" x="%.1f" y="%.1f" textLength="%.1f" lengthAdjust="spacingAndGlyphs">%s</text>'
+                  % (tx, nodo["_py"] + 4.5, len(clase) * ANCHO_CAR, html.escape(clase))]
         if texto:
             partes.append('<text class="valor" x="%.1f" y="%.1f" textLength="%.1f" lengthAdjust="spacingAndGlyphs">%s</text>'
-                          % (tx + (len(tipo) + 1) * ANCHO_CAR, nodo["_py"] + 4.5,
+                          % (tx + (len(clase) + 1) * ANCHO_CAR, nodo["_py"] + 4.5,
                              len(texto) * ANCHO_CAR, html.escape(texto)))
+        if tipo:
+            partes.append('<text class="tipodato" x="%.1f" y="%.1f" textLength="%.1f" lengthAdjust="spacingAndGlyphs">%s</text>'
+                          % (tx + (prefijo + 1) * ANCHO_CAR, nodo["_py"] + 4.5,
+                             (len(tipo) + 2) * ANCHO_CAR, html.escape(": " + tipo)))
         partes.append("</g>")
         cajas.append("".join(partes))
 
@@ -172,12 +187,13 @@ ESTILO = """
 #arbol .aristas path { fill:none; stroke:var(--linea); stroke-width:1.4; }
 #arbol .roles text { fill:var(--suave); font-size:10.5px; font-style:italic; paint-order:stroke; stroke:var(--fondo); stroke-width:4px; stroke-linejoin:round; }
 #arbol .nodo rect { stroke-width:1.5; }
-#arbol .nodo .tipo { font-weight:700; }
+#arbol .nodo .clase { font-weight:700; }
 #arbol .nodo .valor { fill:var(--texto); }
+#arbol .nodo .tipodato { fill:var(--suave); }
 #arbol .nodo.podado rect { stroke-dasharray:5 3; }
 #arbol .nodo:hover rect { stroke-width:3; filter:brightness(1.05); }
 """ + "".join(
-    "#arbol .cat-%s rect{fill:var(--%s-f);stroke:var(--%s-b)} #arbol .cat-%s .tipo{fill:var(--%s-b)}\n" % ((n,) * 5)
+    "#arbol .cat-%s rect{fill:var(--%s-f);stroke:var(--%s-b)} #arbol .cat-%s .clase{fill:var(--%s-b)}\n" % ((n,) * 5)
     for n in [c for c, _ in CATEGORIAS] + [CATEGORIA_DEFECTO])
 
 PAGINA = """<!doctype html>
@@ -260,6 +276,7 @@ def main():
     ap.add_argument("-o", "--salida", help="archivo de salida (.html o .svg)")
     ap.add_argument("--solo", metavar="NOMBRE", help="dibuja solo el subarbol de ese nodo")
     ap.add_argument("--profundidad", type=int, metavar="N", help="limita la profundidad")
+    ap.add_argument("--sin-tipos", action="store_true", help="no muestra los tipos dentro de las cajas")
     ap.add_argument("--abrir", action="store_true", help="abre el resultado en el navegador")
     args = ap.parse_args()
 
@@ -273,7 +290,7 @@ def main():
     if args.profundidad is not None:
         podar(raiz, args.profundidad)
 
-    svg, ancho, alto, nodos = dibujar_svg(raiz)
+    svg, ancho, alto, nodos = dibujar_svg(raiz, not args.sin_tipos)
     salida = args.salida or os.path.splitext(args.json)[0] + ".html"
     carpeta = os.path.dirname(salida)
     if carpeta:

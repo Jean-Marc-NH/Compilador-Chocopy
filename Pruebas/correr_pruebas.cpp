@@ -1,7 +1,8 @@
 // correr_pruebas.cpp
 //
-// Corre todas las pruebas del proyecto (tokens, scanner, parser + AST y
-// mensajes de error). Hay que ejecutarlo desde la raiz del repositorio:
+// Corre todas las pruebas del proyecto (tokens, scanner, parser + AST,
+// mensajes de error y analisis semantico). Hay que ejecutarlo desde la raiz
+// del repositorio:
 //
 //   ./build/pruebas
 
@@ -10,6 +11,7 @@
 #include "prueba_ast.hpp"
 #include "prueba_errores.hpp"
 #include "prueba_lexer.hpp"
+#include "prueba_semantica.hpp"
 #include "prueba_tokens.hpp"
 
 int main() {
@@ -34,6 +36,7 @@ int main() {
 
     prueba_ast(gramatica, cacheTabla);
     prueba_errores(gramatica, cacheTabla);
+    prueba_semantica(gramatica, cacheTabla);
 
     return 0;
 }

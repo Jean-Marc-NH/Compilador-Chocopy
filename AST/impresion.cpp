@@ -5,15 +5,20 @@
 
 namespace {
 
-void imprimir(const Nodo& nodo, const std::string& rol, int nivel, std::ostream& salida) {
+void imprimir(const Nodo& nodo, const std::string& rol, int nivel, bool conDetalles, std::ostream& salida) {
     salida << std::string(static_cast<std::size_t>(nivel) * 2, ' ');
     if (!rol.empty()) salida << rol << ": ";
     salida << nodo.clase();
     if (!nodo.texto().empty()) salida << ' ' << nodo.texto();
+    if (conDetalles) {
+        salida << "  [linea " << nodo.pos.linea;
+        if (!nodo.tipoInferido.empty()) salida << ", tipo " << nodo.tipoInferido;
+        salida << ']';
+    }
     salida << '\n';
     std::vector<Hijo> hijos;
     nodo.hijos(hijos);
-    for (const auto& hijo : hijos) imprimir(*hijo.second, hijo.first, nivel + 1, salida);
+    for (const auto& hijo : hijos) imprimir(*hijo.second, hijo.first, nivel + 1, conDetalles, salida);
 }
 
 // Escapa las comillas, barras y caracteres de control para que el texto sea
@@ -45,7 +50,8 @@ void volcarJson(const Nodo& nodo, const std::string& rol, int nivel, std::ostrea
     salida << sangria << "{";
     if (!rol.empty()) salida << "\"rol\": \"" << escaparJson(rol) << "\", ";
     salida << "\"clase\": \"" << nodo.clase() << "\", \"texto\": \"" << escaparJson(nodo.texto())
-           << "\", \"linea\": " << nodo.pos.linea << ", \"col\": " << nodo.pos.columna;
+           << "\", \"linea\": " << nodo.pos.linea << ", \"col\": " << nodo.pos.columna
+           << ", \"tipo\": \"" << escaparJson(nodo.tipoInferido) << '"';
     std::vector<Hijo> hijos;
     nodo.hijos(hijos);
     if (hijos.empty()) {
@@ -62,11 +68,13 @@ void volcarJson(const Nodo& nodo, const std::string& rol, int nivel, std::ostrea
 
 } // namespace
 
-void imprimirAST(const Nodo& raiz, std::ostream& salida) { imprimir(raiz, "", 0, salida); }
+void imprimirAST(const Nodo& raiz, std::ostream& salida, bool conDetalles) {
+    imprimir(raiz, "", 0, conDetalles, salida);
+}
 
-std::string astATexto(const Nodo& raiz) {
+std::string astATexto(const Nodo& raiz, bool conDetalles) {
     std::ostringstream salida;
-    imprimirAST(raiz, salida);
+    imprimirAST(raiz, salida, conDetalles);
     return salida.str();
 }
 

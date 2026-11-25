@@ -60,6 +60,7 @@ def suma_lista(nums: [int]) -> int:
 
 def concatena(palabras: [str]) -> str:
     resultado: str = ""
+    palabra: str = ""   # la variable del for tambien se declara (sec. 5.2)
     for palabra in palabras:
         resultado = resultado + palabra @ " "  # ERROR 1 (lexico): el caracter '@' no existe en ChocoPy
     return resultado

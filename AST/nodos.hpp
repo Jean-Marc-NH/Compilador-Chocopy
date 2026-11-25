@@ -15,8 +15,8 @@
 // nombre del nodo), texto() (el dato propio: nombre, operador, valor) e
 // hijos() (sus hijos con el rol que cumplen: "condicion", "entonces",
 // "izq"...). Con eso el volcado de texto, el JSON y el grafico de Python
-// recorren cualquier nodo sin conocer cada clase; el analisis semantico puede
-// usar dynamic_cast o agregar un Visitor mas adelante.
+// recorren cualquier nodo sin conocer cada clase; el analisis semantico
+// (Semantico/analizador.cpp) distingue cada clase de nodo con dynamic_cast.
 
 struct Nodo;
 using NodoPtr = std::unique_ptr<Nodo>;
@@ -24,7 +24,11 @@ using ListaNodos = std::vector<NodoPtr>;
 using Hijo = std::pair<std::string, const Nodo*>; // (rol, nodo)
 
 struct Nodo {
-    Posicion pos; // posicion del primer token del nodo
+    Posicion pos; // posicion del primer token del nodo (linea y columna)
+    // Tipo que le asigna el analisis semantico (Semantico/analizador.hpp) a
+    // cada expresion: "int", "[str]", "<None>"... Vacio en las sentencias y
+    // definiciones, y en todo el arbol si todavia no se hizo el analisis.
+    std::string tipoInferido;
     virtual ~Nodo() = default;
     virtual std::string clase() const = 0;
     virtual std::string texto() const { return ""; }

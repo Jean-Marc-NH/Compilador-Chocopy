@@ -25,17 +25,18 @@ SCANNER   := Scanner/tokens.cpp Scanner/lexer.cpp Comun/diagnostico.cpp
 GENERADOR := GeneradorLR1/gramatica.cpp GeneradorLR1/conjuntos.cpp GeneradorLR1/tabla.cpp GeneradorLR1/cache.cpp
 PARSER    := Parser/parser.cpp Parser/mensajes.cpp
 AST       := AST/nodos.cpp AST/constructor.cpp AST/impresion.cpp
+SEMANTICO := Semantico/tipos.cpp Semantico/tabla_simbolos.cpp Semantico/analizador.cpp
 PRUEBAS   := Pruebas/correr_pruebas.cpp Pruebas/prueba_tokens.cpp Pruebas/prueba_lexer.cpp \
-             Pruebas/prueba_ast.cpp Pruebas/prueba_errores.cpp
+             Pruebas/prueba_ast.cpp Pruebas/prueba_errores.cpp Pruebas/prueba_semantica.cpp
 
 ESCANEAR := build/escanear$(EXE)
-ANALIZAR := build/analizar$(EXE)
+CHOCOPY  := build/chocopy$(EXE)
 LR1      := build/lr1$(EXE)
 PROBAR   := build/pruebas$(EXE)
 
 .PHONY: todo pruebas limpiar
 
-todo: $(ESCANEAR) $(ANALIZAR) $(LR1) $(PROBAR)
+todo: $(ESCANEAR) $(CHOCOPY) $(LR1) $(PROBAR)
 
 # 'mkdir build' funciona igual en cmd y en sh; solo se llama si no existe.
 build:
@@ -44,13 +45,13 @@ build:
 $(ESCANEAR): Herramientas/escanear.cpp $(SCANNER) | build
 	$(CXX) $(CXXFLAGS) $(INCLUIR) $^ -o $@ $(LDFLAGS)
 
-$(ANALIZAR): Herramientas/analizar.cpp $(SCANNER) $(GENERADOR) $(PARSER) $(AST) | build
+$(CHOCOPY): Herramientas/chocopy.cpp $(SCANNER) $(GENERADOR) $(PARSER) $(AST) $(SEMANTICO) | build
 	$(CXX) $(CXXFLAGS) $(INCLUIR) $^ -o $@ $(LDFLAGS)
 
 $(LR1): Herramientas/lr1.cpp $(GENERADOR) | build
 	$(CXX) $(CXXFLAGS) $(INCLUIR) $^ -o $@ $(LDFLAGS)
 
-$(PROBAR): $(PRUEBAS) $(SCANNER) $(GENERADOR) $(PARSER) $(AST) | build
+$(PROBAR): $(PRUEBAS) $(SCANNER) $(GENERADOR) $(PARSER) $(AST) $(SEMANTICO) | build
 	$(CXX) $(CXXFLAGS) $(INCLUIR) $^ -o $@ $(LDFLAGS)
 
 pruebas: $(PROBAR)
