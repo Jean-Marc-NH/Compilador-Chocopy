@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "Scanner/tokens.hpp"
+#include "../Scanner/tokens.hpp"
 
 // Traduce un error sintactico (el token que llego y los terminales que el
 // parser habria aceptado) a un mensaje que entienda quien escribe el

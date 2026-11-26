@@ -11,8 +11,8 @@
 // defecto.
 
 #include <iostream>
-#include "Scanner/lexer.hpp"
-#include "Scanner/tokens.hpp"
+#include "../Scanner/lexer.hpp"
+#include "../Scanner/tokens.hpp"
 
 int main(int argc, char** argv) {
     std::string archivo = (argc > 1) ? argv[1] : "Pruebas/programas/Programa_prueba.py";

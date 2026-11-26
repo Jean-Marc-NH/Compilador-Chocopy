@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "Scanner/tokens.hpp"
+#include "../Scanner/tokens.hpp"
 #include "prueba_tokens.hpp"
 
 void prueba_tokens()

@@ -1,6 +1,6 @@
 #include "parser.hpp"
 #include "mensajes.hpp"
-#include "Comun/diagnostico.hpp"
+#include "../Comun/diagnostico.hpp"
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>

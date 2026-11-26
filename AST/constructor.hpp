@@ -2,7 +2,7 @@
 #define AST_CONSTRUCTOR_HPP
 
 #include <memory>
-#include "Parser/arbol.hpp"
+#include "../Parser/arbol.hpp"
 #include "nodos.hpp"
 
 // Convierte el arbol de derivacion que arma el parser (raiz = PROGRAMA) en el

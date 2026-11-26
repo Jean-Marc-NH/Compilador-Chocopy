@@ -1,5 +1,5 @@
 #include "lexer.hpp"
-#include "Comun/diagnostico.hpp"
+#include "../Comun/diagnostico.hpp"
 #include <cctype>
 #include <fstream>
 #include <iostream>

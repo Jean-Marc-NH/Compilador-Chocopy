@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "Scanner/tokens.hpp"
+#include "../Scanner/tokens.hpp"
 
 // Nodos del AST de ChocoPy. Cada nodo corresponde a una construccion del
 // Language Reference (program, var_def, func_def, ...), con el nombre en

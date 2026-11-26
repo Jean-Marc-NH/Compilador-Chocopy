@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AST de ChocoPy - Programa_valido.py</title>
+<style>
+
+:root { color-scheme: light dark; --fondo:#ffffff; --texto:#0f172a; --suave:#64748b; --linea:#94a3b8; --panel:#f8fafc; --borde:#e2e8f0;
+  --Definiciones-f:#e0e7ff; --Definiciones-b:#4f46e5; --Tipos-f:#ccfbf1; --Tipos-b:#0d9488;
+  --Sentencias-f:#fef3c7; --Sentencias-b:#d97706; --Expresiones-f:#dbeafe; --Expresiones-b:#2563eb;
+  --Nombres-f:#f1f5f9; --Nombres-b:#64748b; --Literales-f:#dcfce7; --Literales-b:#16a34a; --Otros-f:#f3f4f6; --Otros-b:#6b7280; }
+@media (prefers-color-scheme: dark) { :root { --fondo:#0b1220; --texto:#e2e8f0; --suave:#94a3b8; --linea:#475569; --panel:#111a2e; --borde:#1e293b;
+  --Definiciones-f:#2b2f66; --Definiciones-b:#a5b4fc; --Tipos-f:#0f3f3b; --Tipos-b:#5eead4;
+  --Sentencias-f:#4a3510; --Sentencias-b:#fbbf24; --Expresiones-f:#16305e; --Expresiones-b:#93c5fd;
+  --Nombres-f:#1e293b; --Nombres-b:#94a3b8; --Literales-f:#12381f; --Literales-b:#86efac; --Otros-f:#1f2937; --Otros-b:#9ca3af; } }
+#arbol .aristas path { fill:none; stroke:var(--linea); stroke-width:1.4; }
+#arbol .roles text { fill:var(--suave); font-size:10.5px; font-style:italic; paint-order:stroke; stroke:var(--fondo); stroke-width:4px; stroke-linejoin:round; }
+#arbol .nodo rect { stroke-width:1.5; }
+#arbol .nodo .clase { font-weight:700; }
+#arbol .nodo .valor { fill:var(--texto); }
+#arbol .nodo .tipodato { fill:var(--suave); }
+#arbol .nodo.podado rect { stroke-dasharray:5 3; }
+#arbol .nodo:hover rect { stroke-width:3; filter:brightness(1.05); }
+#arbol .cat-Definiciones rect{fill:var(--Definiciones-f);stroke:var(--Definiciones-b)} #arbol .cat-Definiciones .clase{fill:var(--Definiciones-b)}
+#arbol .cat-Tipos rect{fill:var(--Tipos-f);stroke:var(--Tipos-b)} #arbol .cat-Tipos .clase{fill:var(--Tipos-b)}
+#arbol .cat-Sentencias rect{fill:var(--Sentencias-f);stroke:var(--Sentencias-b)} #arbol .cat-Sentencias .clase{fill:var(--Sentencias-b)}
+#arbol .cat-Expresiones rect{fill:var(--Expresiones-f);stroke:var(--Expresiones-b)} #arbol .cat-Expresiones .clase{fill:var(--Expresiones-b)}
+#arbol .cat-Nombres rect{fill:var(--Nombres-f);stroke:var(--Nombres-b)} #arbol .cat-Nombres .clase{fill:var(--Nombres-b)}
+#arbol .cat-Literales rect{fill:var(--Literales-f);stroke:var(--Literales-b)} #arbol .cat-Literales .clase{fill:var(--Literales-b)}
+#arbol .cat-Otros rect{fill:var(--Otros-f);stroke:var(--Otros-b)} #arbol .cat-Otros .clase{fill:var(--Otros-b)}
+
+html, body { height:100%; margin:0; }
+body { background:var(--fondo); color:var(--texto); font-family:system-ui, -apple-system, "Segoe UI", sans-serif; display:flex; flex-direction:column; }
+header { display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; padding:12px 20px; background:var(--panel); border-bottom:1px solid var(--borde); }
+h1 { font-size:17px; margin:0; font-weight:650; }
+.meta { color:var(--suave); font-size:13px; }
+.leyenda { display:flex; flex-wrap:wrap; gap:6px 14px; margin-left:auto; font-size:12.5px; }
+.leyenda span { display:inline-flex; align-items:center; gap:6px; }
+.leyenda i { width:14px; height:14px; border-radius:4px; border:1.5px solid; display:inline-block; }
+.herramientas { display:flex; gap:6px; }
+button { font:inherit; font-size:13px; background:var(--fondo); color:var(--texto); border:1px solid var(--borde); border-radius:7px; padding:4px 11px; cursor:pointer; }
+button:hover { border-color:var(--linea); }
+main { flex:1; min-height:0; position:relative; cursor:grab; overflow:hidden; }
+main.arrastrando { cursor:grabbing; }
+#arbol { width:100%; height:100%; display:block; user-select:none; }
+.ayuda { position:absolute; right:12px; bottom:10px; font-size:12px; color:var(--suave); background:var(--panel); border:1px solid var(--borde); border-radius:7px; padding:4px 10px; pointer-events:none; opacity:.92; }
+</style></head>
+<body>
+<header>
+  <h1>AST de ChocoPy &middot; Programa_valido.py</h1>
+  <span class="meta">265 nodos</span>
+  <div class="herramientas"><button id="mas">+</button><button id="menos">&minus;</button><button id="ajustar">Ajustar</button></div>
+  <div class="leyenda"><span><i style="background:var(--Definiciones-f);border-color:var(--Definiciones-b)"></i>Definiciones</span><span><i style="background:var(--Tipos-f);border-color:var(--Tipos-b)"></i>Tipos</span><span><i style="background:var(--Sentencias-f);border-color:var(--Sentencias-b)"></i>Sentencias</span><span><i style="background:var(--Expresiones-f);border-color:var(--Expresiones-b)"></i>Expresiones</span><span><i style="background:var(--Nombres-f);border-color:var(--Nombres-b)"></i>Nombres</span><span><i style="background:var(--Literales-f);border-color:var(--Literales-b)"></i>Literales</span></div>
+</header>
+<main id="lienzo">
+<svg id="arbol" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2831 5546" width="2831" height="5546" font-family="ui-monospace, Consolas, 'DejaVu Sans Mono', monospace" font-size="13">
+<g class="aristas"><path d="M113.2,2788.8 C161.2,2788.8 161.2,242.5 209.2,242.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,604.8 209.2,604.8"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,935.5 209.2,935.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,1283.3 209.2,1283.3"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,2017.0 209.2,2017.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,2626.0 209.2,2626.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,2920.0 209.2,2920.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3004.0 209.2,3004.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3088.0 209.2,3088.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3172.0 209.2,3172.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3256.0 209.2,3256.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3340.0 209.2,3340.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3424.0 209.2,3424.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3508.0 209.2,3508.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3592.0 209.2,3592.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3676.0 209.2,3676.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,3802.0 209.2,3802.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4012.0 209.2,4012.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4075.0 209.2,4075.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4159.0 209.2,4159.0"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4316.5 209.2,4316.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4442.5 209.2,4442.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4568.5 209.2,4568.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4699.8 209.2,4699.8"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,4862.5 209.2,4862.5"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,5062.7 209.2,5062.7"/>
+<path d="M113.2,2788.8 C161.2,2788.8 161.2,5335.0 209.2,5335.0"/>
+<path d="M412.9,242.5 C460.9,242.5 460.9,64.0 508.9,64.0"/>
+<path d="M412.9,242.5 C460.9,242.5 460.9,200.5 508.9,200.5"/>
+<path d="M412.9,242.5 C460.9,242.5 460.9,421.0 508.9,421.0"/>
+<path d="M617.8,64.0 C760.6,64.0 760.6,43.0 903.4,43.0"/>
+<path d="M617.8,64.0 C760.6,64.0 760.6,85.0 903.4,85.0"/>
+<path d="M1146.6,43.0 C1202.5,43.0 1202.5,43.0 1258.4,43.0"/>
+<path d="M696.8,200.5 C800.1,200.5 800.1,127.0 903.4,127.0"/>
+<path d="M696.8,200.5 C800.1,200.5 800.1,169.0 903.4,169.0"/>
+<path d="M696.8,200.5 C800.1,200.5 800.1,274.0 903.4,274.0"/>
+<path d="M1107.1,127.0 C1182.8,127.0 1182.8,127.0 1258.4,127.0"/>
+<path d="M941.2,274.0 C1099.8,274.0 1099.8,211.0 1258.4,211.0"/>
+<path d="M941.2,274.0 C1099.8,274.0 1099.8,274.0 1258.4,274.0"/>
+<path d="M941.2,274.0 C1099.8,274.0 1099.8,337.0 1258.4,337.0"/>
+<path d="M1485.8,211.0 C1545.7,211.0 1545.7,211.0 1605.5,211.0"/>
+<path d="M1383.1,274.0 C1494.3,274.0 1494.3,274.0 1605.5,274.0"/>
+<path d="M1753.9,274.0 C1845.3,274.0 1845.3,253.0 1936.8,253.0"/>
+<path d="M1753.9,274.0 C1845.3,274.0 1845.3,295.0 1936.8,295.0"/>
+<path d="M2061.5,295.0 C2172.7,295.0 2172.7,295.0 2283.9,295.0"/>
+<path d="M2408.6,295.0 C2488.2,295.0 2488.2,295.0 2567.8,295.0"/>
+<path d="M657.3,421.0 C780.4,421.0 780.4,379.0 903.4,379.0"/>
+<path d="M657.3,421.0 C780.4,421.0 780.4,421.0 903.4,421.0"/>
+<path d="M657.3,421.0 C780.4,421.0 780.4,463.0 903.4,463.0"/>
+<path d="M1107.1,379.0 C1182.8,379.0 1182.8,379.0 1258.4,379.0"/>
+<path d="M988.6,463.0 C1123.5,463.0 1123.5,463.0 1258.4,463.0"/>
+<path d="M389.2,604.8 C449.1,604.8 449.1,536.5 508.9,536.5"/>
+<path d="M389.2,604.8 C449.1,604.8 449.1,673.0 508.9,673.0"/>
+<path d="M681.0,536.5 C792.2,536.5 792.2,505.0 903.4,505.0"/>
+<path d="M681.0,536.5 C792.2,536.5 792.2,568.0 903.4,568.0"/>
+<path d="M1083.4,505.0 C1170.9,505.0 1170.9,505.0 1258.4,505.0"/>
+<path d="M1004.4,568.0 C1131.4,568.0 1131.4,547.0 1258.4,547.0"/>
+<path d="M1004.4,568.0 C1131.4,568.0 1131.4,589.0 1258.4,589.0"/>
+<path d="M1485.8,547.0 C1545.7,547.0 1545.7,547.0 1605.5,547.0"/>
+<path d="M657.3,673.0 C780.4,673.0 780.4,631.0 903.4,631.0"/>
+<path d="M657.3,673.0 C780.4,673.0 780.4,673.0 903.4,673.0"/>
+<path d="M657.3,673.0 C780.4,673.0 780.4,715.0 903.4,715.0"/>
+<path d="M1083.4,631.0 C1170.9,631.0 1170.9,631.0 1258.4,631.0"/>
+<path d="M988.6,715.0 C1123.5,715.0 1123.5,715.0 1258.4,715.0"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,757.0 508.9,757.0"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,799.0 508.9,799.0"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,841.0 508.9,841.0"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,904.0 508.9,904.0"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,998.5 508.9,998.5"/>
+<path d="M373.4,935.5 C441.1,935.5 441.1,1114.0 508.9,1114.0"/>
+<path d="M712.6,757.0 C808.0,757.0 808.0,757.0 903.4,757.0"/>
+<path d="M996.5,757.0 C1127.5,757.0 1127.5,757.0 1258.4,757.0"/>
+<path d="M681.0,799.0 C792.2,799.0 792.2,799.0 903.4,799.0"/>
+<path d="M617.8,904.0 C760.6,904.0 760.6,883.0 903.4,883.0"/>
+<path d="M617.8,904.0 C760.6,904.0 760.6,925.0 903.4,925.0"/>
+<path d="M1075.5,883.0 C1167.0,883.0 1167.0,883.0 1258.4,883.0"/>
+<path d="M609.9,998.5 C756.7,998.5 756.7,967.0 903.4,967.0"/>
+<path d="M609.9,998.5 C756.7,998.5 756.7,1030.0 903.4,1030.0"/>
+<path d="M1020.2,1030.0 C1139.3,1030.0 1139.3,1009.0 1258.4,1009.0"/>
+<path d="M1020.2,1030.0 C1139.3,1030.0 1139.3,1051.0 1258.4,1051.0"/>
+<path d="M594.1,1114.0 C748.8,1114.0 748.8,1114.0 903.4,1114.0"/>
+<path d="M1075.5,1114.0 C1167.0,1114.0 1167.0,1093.0 1258.4,1093.0"/>
+<path d="M1075.5,1114.0 C1167.0,1114.0 1167.0,1135.0 1258.4,1135.0"/>
+<path d="M389.2,1283.3 C449.1,1283.3 449.1,1177.0 508.9,1177.0"/>
+<path d="M389.2,1283.3 C449.1,1283.3 449.1,1219.0 508.9,1219.0"/>
+<path d="M389.2,1283.3 C449.1,1283.3 449.1,1389.6 508.9,1389.6"/>
+<path d="M665.2,1177.0 C784.3,1177.0 784.3,1177.0 903.4,1177.0"/>
+<path d="M546.7,1389.6 C725.1,1389.6 725.1,1282.0 903.4,1282.0"/>
+<path d="M546.7,1389.6 C725.1,1389.6 725.1,1345.0 903.4,1345.0"/>
+<path d="M546.7,1389.6 C725.1,1389.6 725.1,1497.2 903.4,1497.2"/>
+<path d="M1067.6,1282.0 C1163.0,1282.0 1163.0,1261.0 1258.4,1261.0"/>
+<path d="M1067.6,1282.0 C1163.0,1282.0 1163.0,1303.0 1258.4,1303.0"/>
+<path d="M988.6,1345.0 C1123.5,1345.0 1123.5,1345.0 1258.4,1345.0"/>
+<path d="M941.2,1497.2 C1099.8,1497.2 1099.8,1408.0 1258.4,1408.0"/>
+<path d="M941.2,1497.2 C1099.8,1497.2 1099.8,1471.0 1258.4,1471.0"/>
+<path d="M941.2,1497.2 C1099.8,1497.2 1099.8,1586.5 1258.4,1586.5"/>
+<path d="M1430.5,1408.0 C1518.0,1408.0 1518.0,1387.0 1605.5,1387.0"/>
+<path d="M1430.5,1408.0 C1518.0,1408.0 1518.0,1429.0 1605.5,1429.0"/>
+<path d="M1343.6,1471.0 C1474.6,1471.0 1474.6,1471.0 1605.5,1471.0"/>
+<path d="M1296.2,1586.5 C1450.8,1586.5 1450.8,1534.0 1605.5,1534.0"/>
+<path d="M1296.2,1586.5 C1450.8,1586.5 1450.8,1597.0 1605.5,1597.0"/>
+<path d="M1296.2,1586.5 C1450.8,1586.5 1450.8,1639.0 1605.5,1639.0"/>
+<path d="M1777.6,1534.0 C1857.2,1534.0 1857.2,1513.0 1936.8,1513.0"/>
+<path d="M1777.6,1534.0 C1857.2,1534.0 1857.2,1555.0 1936.8,1555.0"/>
+<path d="M1690.7,1597.0 C1813.8,1597.0 1813.8,1597.0 1936.8,1597.0"/>
+<path d="M1690.7,1639.0 C1813.8,1639.0 1813.8,1639.0 1936.8,1639.0"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,1681.0 508.9,1681.0"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,1723.0 508.9,1723.0"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,1786.0 508.9,1786.0"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,1870.0 508.9,1870.0"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,2111.5 508.9,2111.5"/>
+<path d="M397.1,2017.0 C453.0,2017.0 453.0,2353.0 508.9,2353.0"/>
+<path d="M704.7,1681.0 C804.1,1681.0 804.1,1681.0 903.4,1681.0"/>
+<path d="M996.5,1681.0 C1127.5,1681.0 1127.5,1681.0 1258.4,1681.0"/>
+<path d="M617.8,1786.0 C760.6,1786.0 760.6,1765.0 903.4,1765.0"/>
+<path d="M617.8,1786.0 C760.6,1786.0 760.6,1807.0 903.4,1807.0"/>
+<path d="M1091.3,1765.0 C1174.9,1765.0 1174.9,1765.0 1258.4,1765.0"/>
+<path d="M617.8,1870.0 C760.6,1870.0 760.6,1849.0 903.4,1849.0"/>
+<path d="M617.8,1870.0 C760.6,1870.0 760.6,1891.0 903.4,1891.0"/>
+<path d="M1059.7,1849.0 C1159.1,1849.0 1159.1,1849.0 1258.4,1849.0"/>
+<path d="M594.1,2111.5 C748.8,2111.5 748.8,1964.5 903.4,1964.5"/>
+<path d="M594.1,2111.5 C748.8,2111.5 748.8,2095.8 903.4,2095.8"/>
+<path d="M594.1,2111.5 C748.8,2111.5 748.8,2258.5 903.4,2258.5"/>
+<path d="M1067.6,1964.5 C1163.0,1964.5 1163.0,1933.0 1258.4,1933.0"/>
+<path d="M1067.6,1964.5 C1163.0,1964.5 1163.0,1996.0 1258.4,1996.0"/>
+<path d="M1383.1,1996.0 C1494.3,1996.0 1494.3,1975.0 1605.5,1975.0"/>
+<path d="M1383.1,1996.0 C1494.3,1996.0 1494.3,2017.0 1605.5,2017.0"/>
+<path d="M1004.4,2095.8 C1131.4,2095.8 1131.4,2059.0 1258.4,2059.0"/>
+<path d="M1004.4,2095.8 C1131.4,2095.8 1131.4,2132.5 1258.4,2132.5"/>
+<path d="M1414.7,2132.5 C1510.1,2132.5 1510.1,2101.0 1605.5,2101.0"/>
+<path d="M1414.7,2132.5 C1510.1,2132.5 1510.1,2164.0 1605.5,2164.0"/>
+<path d="M1722.3,2164.0 C1829.5,2164.0 1829.5,2143.0 1936.8,2143.0"/>
+<path d="M1722.3,2164.0 C1829.5,2164.0 1829.5,2185.0 1936.8,2185.0"/>
+<path d="M1004.4,2258.5 C1131.4,2258.5 1131.4,2227.0 1258.4,2227.0"/>
+<path d="M1004.4,2258.5 C1131.4,2258.5 1131.4,2290.0 1258.4,2290.0"/>
+<path d="M1414.7,2290.0 C1510.1,2290.0 1510.1,2269.0 1605.5,2269.0"/>
+<path d="M1414.7,2290.0 C1510.1,2290.0 1510.1,2311.0 1605.5,2311.0"/>
+<path d="M594.1,2353.0 C748.8,2353.0 748.8,2353.0 903.4,2353.0"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2395.0 508.9,2395.0"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2437.0 508.9,2437.0"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2500.0 508.9,2500.0"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2584.0 508.9,2584.0"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2691.6 508.9,2691.6"/>
+<path d="M389.2,2626.0 C449.1,2626.0 449.1,2857.0 508.9,2857.0"/>
+<path d="M736.3,2395.0 C819.9,2395.0 819.9,2395.0 903.4,2395.0"/>
+<path d="M996.5,2395.0 C1127.5,2395.0 1127.5,2395.0 1258.4,2395.0"/>
+<path d="M617.8,2500.0 C760.6,2500.0 760.6,2479.0 903.4,2479.0"/>
+<path d="M617.8,2500.0 C760.6,2500.0 760.6,2521.0 903.4,2521.0"/>
+<path d="M1122.9,2479.0 C1190.7,2479.0 1190.7,2479.0 1258.4,2479.0"/>
+<path d="M617.8,2584.0 C760.6,2584.0 760.6,2563.0 903.4,2563.0"/>
+<path d="M617.8,2584.0 C760.6,2584.0 760.6,2605.0 903.4,2605.0"/>
+<path d="M1107.1,2563.0 C1182.8,2563.0 1182.8,2563.0 1258.4,2563.0"/>
+<path d="M625.7,2691.6 C764.6,2691.6 764.6,2647.0 903.4,2647.0"/>
+<path d="M625.7,2691.6 C764.6,2691.6 764.6,2736.2 903.4,2736.2"/>
+<path d="M1004.4,2736.2 C1131.4,2736.2 1131.4,2689.0 1258.4,2689.0"/>
+<path d="M1004.4,2736.2 C1131.4,2736.2 1131.4,2783.5 1258.4,2783.5"/>
+<path d="M1414.7,2783.5 C1510.1,2783.5 1510.1,2752.0 1605.5,2752.0"/>
+<path d="M1414.7,2783.5 C1510.1,2783.5 1510.1,2815.0 1605.5,2815.0"/>
+<path d="M1761.8,2752.0 C1849.3,2752.0 1849.3,2731.0 1936.8,2731.0"/>
+<path d="M1761.8,2752.0 C1849.3,2752.0 1849.3,2773.0 1936.8,2773.0"/>
+<path d="M594.1,2857.0 C748.8,2857.0 748.8,2857.0 903.4,2857.0"/>
+<path d="M318.1,2920.0 C413.5,2920.0 413.5,2899.0 508.9,2899.0"/>
+<path d="M318.1,2920.0 C413.5,2920.0 413.5,2941.0 508.9,2941.0"/>
+<path d="M720.5,2899.0 C812.0,2899.0 812.0,2899.0 903.4,2899.0"/>
+<path d="M996.5,2899.0 C1127.5,2899.0 1127.5,2899.0 1258.4,2899.0"/>
+<path d="M318.1,3004.0 C413.5,3004.0 413.5,2983.0 508.9,2983.0"/>
+<path d="M318.1,3004.0 C413.5,3004.0 413.5,3025.0 508.9,3025.0"/>
+<path d="M688.9,2983.0 C796.2,2983.0 796.2,2983.0 903.4,2983.0"/>
+<path d="M318.1,3088.0 C413.5,3088.0 413.5,3067.0 508.9,3067.0"/>
+<path d="M318.1,3088.0 C413.5,3088.0 413.5,3109.0 508.9,3109.0"/>
+<path d="M704.7,3067.0 C804.1,3067.0 804.1,3067.0 903.4,3067.0"/>
+<path d="M318.1,3172.0 C413.5,3172.0 413.5,3151.0 508.9,3151.0"/>
+<path d="M318.1,3172.0 C413.5,3172.0 413.5,3193.0 508.9,3193.0"/>
+<path d="M688.9,3151.0 C796.2,3151.0 796.2,3151.0 903.4,3151.0"/>
+<path d="M318.1,3256.0 C413.5,3256.0 413.5,3235.0 508.9,3235.0"/>
+<path d="M318.1,3256.0 C413.5,3256.0 413.5,3277.0 508.9,3277.0"/>
+<path d="M688.9,3235.0 C796.2,3235.0 796.2,3235.0 903.4,3235.0"/>
+<path d="M318.1,3340.0 C413.5,3340.0 413.5,3319.0 508.9,3319.0"/>
+<path d="M318.1,3340.0 C413.5,3340.0 413.5,3361.0 508.9,3361.0"/>
+<path d="M760.0,3319.0 C831.7,3319.0 831.7,3319.0 903.4,3319.0"/>
+<path d="M318.1,3424.0 C413.5,3424.0 413.5,3403.0 508.9,3403.0"/>
+<path d="M318.1,3424.0 C413.5,3424.0 413.5,3445.0 508.9,3445.0"/>
+<path d="M665.2,3403.0 C784.3,3403.0 784.3,3403.0 903.4,3403.0"/>
+<path d="M318.1,3508.0 C413.5,3508.0 413.5,3487.0 508.9,3487.0"/>
+<path d="M318.1,3508.0 C413.5,3508.0 413.5,3529.0 508.9,3529.0"/>
+<path d="M665.2,3487.0 C784.3,3487.0 784.3,3487.0 903.4,3487.0"/>
+<path d="M318.1,3592.0 C413.5,3592.0 413.5,3571.0 508.9,3571.0"/>
+<path d="M318.1,3592.0 C413.5,3592.0 413.5,3613.0 508.9,3613.0"/>
+<path d="M752.1,3571.0 C827.8,3571.0 827.8,3571.0 903.4,3571.0"/>
+<path d="M318.1,3676.0 C413.5,3676.0 413.5,3655.0 508.9,3655.0"/>
+<path d="M318.1,3676.0 C413.5,3676.0 413.5,3697.0 508.9,3697.0"/>
+<path d="M775.8,3655.0 C839.6,3655.0 839.6,3655.0 903.4,3655.0"/>
+<path d="M310.2,3802.0 C409.6,3802.0 409.6,3739.0 508.9,3739.0"/>
+<path d="M310.2,3802.0 C409.6,3802.0 409.6,3865.0 508.9,3865.0"/>
+<path d="M657.3,3865.0 C780.4,3865.0 780.4,3781.0 903.4,3781.0"/>
+<path d="M657.3,3865.0 C780.4,3865.0 780.4,3823.0 903.4,3823.0"/>
+<path d="M657.3,3865.0 C780.4,3865.0 780.4,3865.0 903.4,3865.0"/>
+<path d="M657.3,3865.0 C780.4,3865.0 780.4,3907.0 903.4,3907.0"/>
+<path d="M657.3,3865.0 C780.4,3865.0 780.4,3949.0 903.4,3949.0"/>
+<path d="M1051.8,3865.0 C1155.1,3865.0 1155.1,3865.0 1258.4,3865.0"/>
+<path d="M310.2,4012.0 C409.6,4012.0 409.6,3991.0 508.9,3991.0"/>
+<path d="M310.2,4012.0 C409.6,4012.0 409.6,4033.0 508.9,4033.0"/>
+<path d="M633.6,4033.0 C768.5,4033.0 768.5,4033.0 903.4,4033.0"/>
+<path d="M333.9,4075.0 C421.4,4075.0 421.4,4075.0 508.9,4075.0"/>
+<path d="M657.3,4075.0 C780.4,4075.0 780.4,4075.0 903.4,4075.0"/>
+<path d="M1067.6,4075.0 C1163.0,4075.0 1163.0,4075.0 1258.4,4075.0"/>
+<path d="M333.9,4159.0 C421.4,4159.0 421.4,4159.0 508.9,4159.0"/>
+<path d="M657.3,4159.0 C780.4,4159.0 780.4,4117.0 903.4,4117.0"/>
+<path d="M657.3,4159.0 C780.4,4159.0 780.4,4201.0 903.4,4201.0"/>
+<path d="M1036.0,4201.0 C1147.2,4201.0 1147.2,4159.0 1258.4,4159.0"/>
+<path d="M1036.0,4201.0 C1147.2,4201.0 1147.2,4201.0 1258.4,4201.0"/>
+<path d="M1036.0,4201.0 C1147.2,4201.0 1147.2,4243.0 1258.4,4243.0"/>
+<path d="M333.9,4316.5 C421.4,4316.5 421.4,4316.5 508.9,4316.5"/>
+<path d="M657.3,4316.5 C780.4,4316.5 780.4,4285.0 903.4,4285.0"/>
+<path d="M657.3,4316.5 C780.4,4316.5 780.4,4348.0 903.4,4348.0"/>
+<path d="M1028.1,4348.0 C1143.2,4348.0 1143.2,4327.0 1258.4,4327.0"/>
+<path d="M1028.1,4348.0 C1143.2,4348.0 1143.2,4369.0 1258.4,4369.0"/>
+<path d="M1406.8,4369.0 C1506.2,4369.0 1506.2,4369.0 1605.5,4369.0"/>
+<path d="M333.9,4442.5 C421.4,4442.5 421.4,4442.5 508.9,4442.5"/>
+<path d="M657.3,4442.5 C780.4,4442.5 780.4,4411.0 903.4,4411.0"/>
+<path d="M657.3,4442.5 C780.4,4442.5 780.4,4474.0 903.4,4474.0"/>
+<path d="M1028.1,4474.0 C1143.2,4474.0 1143.2,4453.0 1258.4,4453.0"/>
+<path d="M1028.1,4474.0 C1143.2,4474.0 1143.2,4495.0 1258.4,4495.0"/>
+<path d="M333.9,4568.5 C421.4,4568.5 421.4,4568.5 508.9,4568.5"/>
+<path d="M657.3,4568.5 C780.4,4568.5 780.4,4537.0 903.4,4537.0"/>
+<path d="M657.3,4568.5 C780.4,4568.5 780.4,4600.0 903.4,4600.0"/>
+<path d="M1028.1,4600.0 C1143.2,4600.0 1143.2,4579.0 1258.4,4579.0"/>
+<path d="M1028.1,4600.0 C1143.2,4600.0 1143.2,4621.0 1258.4,4621.0"/>
+<path d="M333.9,4699.8 C421.4,4699.8 421.4,4699.8 508.9,4699.8"/>
+<path d="M657.3,4699.8 C780.4,4699.8 780.4,4663.0 903.4,4663.0"/>
+<path d="M657.3,4699.8 C780.4,4699.8 780.4,4736.5 903.4,4736.5"/>
+<path d="M1028.1,4736.5 C1143.2,4736.5 1143.2,4705.0 1258.4,4705.0"/>
+<path d="M1028.1,4736.5 C1143.2,4736.5 1143.2,4768.0 1258.4,4768.0"/>
+<path d="M1406.8,4768.0 C1506.2,4768.0 1506.2,4747.0 1605.5,4747.0"/>
+<path d="M1406.8,4768.0 C1506.2,4768.0 1506.2,4789.0 1605.5,4789.0"/>
+<path d="M310.2,4862.5 C409.6,4862.5 409.6,4831.0 508.9,4831.0"/>
+<path d="M310.2,4862.5 C409.6,4862.5 409.6,4894.0 508.9,4894.0"/>
+<path d="M681.0,4894.0 C792.2,4894.0 792.2,4873.0 903.4,4873.0"/>
+<path d="M681.0,4894.0 C792.2,4894.0 792.2,4915.0 903.4,4915.0"/>
+<path d="M310.2,5062.7 C409.6,5062.7 409.6,4957.0 508.9,4957.0"/>
+<path d="M310.2,5062.7 C409.6,5062.7 409.6,5168.3 508.9,5168.3"/>
+<path d="M665.2,5168.3 C784.3,5168.3 784.3,5127.6 903.4,5127.6"/>
+<path d="M665.2,5168.3 C784.3,5168.3 784.3,5209.0 903.4,5209.0"/>
+<path d="M1059.7,5127.6 C1159.1,5127.6 1159.1,5088.2 1258.4,5088.2"/>
+<path d="M1059.7,5127.6 C1159.1,5127.6 1159.1,5167.0 1258.4,5167.0"/>
+<path d="M1422.6,5088.2 C1514.1,5088.2 1514.1,5051.5 1605.5,5051.5"/>
+<path d="M1422.6,5088.2 C1514.1,5088.2 1514.1,5125.0 1605.5,5125.0"/>
+<path d="M1761.8,5051.5 C1849.3,5051.5 1849.3,5020.0 1936.8,5020.0"/>
+<path d="M1761.8,5051.5 C1849.3,5051.5 1849.3,5083.0 1936.8,5083.0"/>
+<path d="M2093.1,5020.0 C2188.5,5020.0 2188.5,4999.0 2283.9,4999.0"/>
+<path d="M2093.1,5020.0 C2188.5,5020.0 2188.5,5041.0 2283.9,5041.0"/>
+<path d="M310.2,5335.0 C409.6,5335.0 409.6,5251.0 508.9,5251.0"/>
+<path d="M310.2,5335.0 C409.6,5335.0 409.6,5419.0 508.9,5419.0"/>
+<path d="M681.0,5419.0 C792.2,5419.0 792.2,5356.0 903.4,5356.0"/>
+<path d="M681.0,5419.0 C792.2,5419.0 792.2,5482.0 903.4,5482.0"/>
+<path d="M1083.4,5356.0 C1170.9,5356.0 1170.9,5314.0 1258.4,5314.0"/>
+<path d="M1083.4,5356.0 C1170.9,5356.0 1170.9,5398.0 1258.4,5398.0"/>
+<path d="M1422.6,5314.0 C1514.1,5314.0 1514.1,5293.0 1605.5,5293.0"/>
+<path d="M1422.6,5314.0 C1514.1,5314.0 1514.1,5335.0 1605.5,5335.0"/>
+<path d="M1430.5,5398.0 C1518.0,5398.0 1518.0,5398.0 1605.5,5398.0"/>
+<path d="M1777.6,5398.0 C1857.2,5398.0 1857.2,5377.0 1936.8,5377.0"/>
+<path d="M1777.6,5398.0 C1857.2,5398.0 1857.2,5419.0 1936.8,5419.0"/>
+<path d="M1075.5,5482.0 C1167.0,5482.0 1167.0,5461.0 1258.4,5461.0"/>
+<path d="M1075.5,5482.0 C1167.0,5482.0 1167.0,5503.0 1258.4,5503.0"/></g>
+<g class="roles"><text x="202.2" y="237.5" text-anchor="end">def</text>
+<text x="202.2" y="599.8" text-anchor="end">def</text>
+<text x="202.2" y="930.5" text-anchor="end">def</text>
+<text x="202.2" y="1278.3" text-anchor="end">def</text>
+<text x="202.2" y="2012.0" text-anchor="end">def</text>
+<text x="202.2" y="2621.0" text-anchor="end">def</text>
+<text x="202.2" y="2915.0" text-anchor="end">def</text>
+<text x="202.2" y="2999.0" text-anchor="end">def</text>
+<text x="202.2" y="3083.0" text-anchor="end">def</text>
+<text x="202.2" y="3167.0" text-anchor="end">def</text>
+<text x="202.2" y="3251.0" text-anchor="end">def</text>
+<text x="202.2" y="3335.0" text-anchor="end">def</text>
+<text x="202.2" y="3419.0" text-anchor="end">def</text>
+<text x="202.2" y="3503.0" text-anchor="end">def</text>
+<text x="202.2" y="3587.0" text-anchor="end">def</text>
+<text x="202.2" y="3671.0" text-anchor="end">def</text>
+<text x="202.2" y="3797.0" text-anchor="end">sentencia</text>
+<text x="202.2" y="4007.0" text-anchor="end">sentencia</text>
+<text x="202.2" y="4070.0" text-anchor="end">sentencia</text>
+<text x="202.2" y="4154.0" text-anchor="end">sentencia</text>
+<text x="202.2" y="4311.5" text-anchor="end">sentencia</text>
+<text x="202.2" y="4437.5" text-anchor="end">sentencia</text>
+<text x="202.2" y="4563.5" text-anchor="end">sentencia</text>
+<text x="202.2" y="4694.8" text-anchor="end">sentencia</text>
+<text x="202.2" y="4857.5" text-anchor="end">sentencia</text>
+<text x="202.2" y="5057.7" text-anchor="end">sentencia</text>
+<text x="202.2" y="5330.0" text-anchor="end">sentencia</text>
+<text x="501.9" y="59.0" text-anchor="end">miembro</text>
+<text x="501.9" y="195.5" text-anchor="end">miembro</text>
+<text x="501.9" y="416.0" text-anchor="end">miembro</text>
+<text x="896.4" y="38.0" text-anchor="end">var</text>
+<text x="896.4" y="80.0" text-anchor="end">valor</text>
+<text x="1251.4" y="38.0" text-anchor="end">tipo</text>
+<text x="896.4" y="122.0" text-anchor="end">param</text>
+<text x="896.4" y="164.0" text-anchor="end">retorno</text>
+<text x="896.4" y="269.0" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="122.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="206.0" text-anchor="end">condicion</text>
+<text x="1251.4" y="269.0" text-anchor="end">entonces</text>
+<text x="1251.4" y="332.0" text-anchor="end">sino</text>
+<text x="1598.5" y="206.0" text-anchor="end">objeto</text>
+<text x="1598.5" y="269.0" text-anchor="end">expr</text>
+<text x="1929.8" y="248.0" text-anchor="end">funcion</text>
+<text x="1929.8" y="290.0" text-anchor="end">arg</text>
+<text x="2276.9" y="290.0" text-anchor="end">funcion</text>
+<text x="2560.8" y="290.0" text-anchor="end">objeto</text>
+<text x="896.4" y="374.0" text-anchor="end">param</text>
+<text x="896.4" y="416.0" text-anchor="end">retorno</text>
+<text x="896.4" y="458.0" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="374.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="458.0" text-anchor="end">valor</text>
+<text x="501.9" y="531.5" text-anchor="end">miembro</text>
+<text x="501.9" y="668.0" text-anchor="end">miembro</text>
+<text x="896.4" y="500.0" text-anchor="end">param</text>
+<text x="896.4" y="563.0" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="500.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="542.0" text-anchor="end">objetivo</text>
+<text x="1251.4" y="584.0" text-anchor="end">valor</text>
+<text x="1598.5" y="542.0" text-anchor="end">objeto</text>
+<text x="896.4" y="626.0" text-anchor="end">param</text>
+<text x="896.4" y="668.0" text-anchor="end">retorno</text>
+<text x="896.4" y="710.0" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="626.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="710.0" text-anchor="end">valor</text>
+<text x="501.9" y="752.0" text-anchor="end">param</text>
+<text x="501.9" y="794.0" text-anchor="end">param</text>
+<text x="501.9" y="836.0" text-anchor="end">retorno</text>
+<text x="501.9" y="899.0" text-anchor="end">decl</text>
+<text x="501.9" y="993.5" text-anchor="end">cuerpo</text>
+<text x="501.9" y="1109.0" text-anchor="end">cuerpo</text>
+<text x="896.4" y="752.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="752.0" text-anchor="end">elem</text>
+<text x="896.4" y="794.0" text-anchor="end">tipo</text>
+<text x="896.4" y="878.0" text-anchor="end">var</text>
+<text x="896.4" y="920.0" text-anchor="end">valor</text>
+<text x="1251.4" y="878.0" text-anchor="end">tipo</text>
+<text x="896.4" y="962.0" text-anchor="end">objetivo</text>
+<text x="896.4" y="1025.0" text-anchor="end">valor</text>
+<text x="1251.4" y="1004.0" text-anchor="end">objeto</text>
+<text x="1251.4" y="1046.0" text-anchor="end">indice</text>
+<text x="896.4" y="1109.0" text-anchor="end">valor</text>
+<text x="1251.4" y="1088.0" text-anchor="end">izq</text>
+<text x="1251.4" y="1130.0" text-anchor="end">der</text>
+<text x="501.9" y="1172.0" text-anchor="end">param</text>
+<text x="501.9" y="1214.0" text-anchor="end">retorno</text>
+<text x="501.9" y="1384.6" text-anchor="end">cuerpo</text>
+<text x="896.4" y="1172.0" text-anchor="end">tipo</text>
+<text x="896.4" y="1277.0" text-anchor="end">condicion</text>
+<text x="896.4" y="1340.0" text-anchor="end">entonces</text>
+<text x="896.4" y="1492.2" text-anchor="end">sino</text>
+<text x="1251.4" y="1256.0" text-anchor="end">izq</text>
+<text x="1251.4" y="1298.0" text-anchor="end">der</text>
+<text x="1251.4" y="1340.0" text-anchor="end">valor</text>
+<text x="1251.4" y="1403.0" text-anchor="end">condicion</text>
+<text x="1251.4" y="1466.0" text-anchor="end">entonces</text>
+<text x="1251.4" y="1581.5" text-anchor="end">sino</text>
+<text x="1598.5" y="1382.0" text-anchor="end">izq</text>
+<text x="1598.5" y="1424.0" text-anchor="end">der</text>
+<text x="1598.5" y="1466.0" text-anchor="end">valor</text>
+<text x="1598.5" y="1529.0" text-anchor="end">condicion</text>
+<text x="1598.5" y="1592.0" text-anchor="end">entonces</text>
+<text x="1598.5" y="1634.0" text-anchor="end">sino</text>
+<text x="1929.8" y="1508.0" text-anchor="end">izq</text>
+<text x="1929.8" y="1550.0" text-anchor="end">der</text>
+<text x="1929.8" y="1592.0" text-anchor="end">valor</text>
+<text x="1929.8" y="1634.0" text-anchor="end">valor</text>
+<text x="501.9" y="1676.0" text-anchor="end">param</text>
+<text x="501.9" y="1718.0" text-anchor="end">retorno</text>
+<text x="501.9" y="1781.0" text-anchor="end">decl</text>
+<text x="501.9" y="1865.0" text-anchor="end">decl</text>
+<text x="501.9" y="2106.5" text-anchor="end">cuerpo</text>
+<text x="501.9" y="2348.0" text-anchor="end">cuerpo</text>
+<text x="896.4" y="1676.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="1676.0" text-anchor="end">elem</text>
+<text x="896.4" y="1760.0" text-anchor="end">var</text>
+<text x="896.4" y="1802.0" text-anchor="end">valor</text>
+<text x="1251.4" y="1760.0" text-anchor="end">tipo</text>
+<text x="896.4" y="1844.0" text-anchor="end">var</text>
+<text x="896.4" y="1886.0" text-anchor="end">valor</text>
+<text x="1251.4" y="1844.0" text-anchor="end">tipo</text>
+<text x="896.4" y="1959.5" text-anchor="end">condicion</text>
+<text x="896.4" y="2090.8" text-anchor="end">cuerpo</text>
+<text x="896.4" y="2253.5" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="1928.0" text-anchor="end">izq</text>
+<text x="1251.4" y="1991.0" text-anchor="end">der</text>
+<text x="1598.5" y="1970.0" text-anchor="end">funcion</text>
+<text x="1598.5" y="2012.0" text-anchor="end">arg</text>
+<text x="1251.4" y="2054.0" text-anchor="end">objetivo</text>
+<text x="1251.4" y="2127.5" text-anchor="end">valor</text>
+<text x="1598.5" y="2096.0" text-anchor="end">izq</text>
+<text x="1598.5" y="2159.0" text-anchor="end">der</text>
+<text x="1929.8" y="2138.0" text-anchor="end">objeto</text>
+<text x="1929.8" y="2180.0" text-anchor="end">indice</text>
+<text x="1251.4" y="2222.0" text-anchor="end">objetivo</text>
+<text x="1251.4" y="2285.0" text-anchor="end">valor</text>
+<text x="1598.5" y="2264.0" text-anchor="end">izq</text>
+<text x="1598.5" y="2306.0" text-anchor="end">der</text>
+<text x="896.4" y="2348.0" text-anchor="end">valor</text>
+<text x="501.9" y="2390.0" text-anchor="end">param</text>
+<text x="501.9" y="2432.0" text-anchor="end">retorno</text>
+<text x="501.9" y="2495.0" text-anchor="end">decl</text>
+<text x="501.9" y="2579.0" text-anchor="end">decl</text>
+<text x="501.9" y="2686.6" text-anchor="end">cuerpo</text>
+<text x="501.9" y="2852.0" text-anchor="end">cuerpo</text>
+<text x="896.4" y="2390.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="2390.0" text-anchor="end">elem</text>
+<text x="896.4" y="2474.0" text-anchor="end">var</text>
+<text x="896.4" y="2516.0" text-anchor="end">valor</text>
+<text x="1251.4" y="2474.0" text-anchor="end">tipo</text>
+<text x="896.4" y="2558.0" text-anchor="end">var</text>
+<text x="896.4" y="2600.0" text-anchor="end">valor</text>
+<text x="1251.4" y="2558.0" text-anchor="end">tipo</text>
+<text x="896.4" y="2642.0" text-anchor="end">iterable</text>
+<text x="896.4" y="2731.2" text-anchor="end">cuerpo</text>
+<text x="1251.4" y="2684.0" text-anchor="end">objetivo</text>
+<text x="1251.4" y="2778.5" text-anchor="end">valor</text>
+<text x="1598.5" y="2747.0" text-anchor="end">izq</text>
+<text x="1598.5" y="2810.0" text-anchor="end">der</text>
+<text x="1929.8" y="2726.0" text-anchor="end">izq</text>
+<text x="1929.8" y="2768.0" text-anchor="end">der</text>
+<text x="896.4" y="2852.0" text-anchor="end">valor</text>
+<text x="501.9" y="2894.0" text-anchor="end">var</text>
+<text x="501.9" y="2936.0" text-anchor="end">valor</text>
+<text x="896.4" y="2894.0" text-anchor="end">tipo</text>
+<text x="1251.4" y="2894.0" text-anchor="end">elem</text>
+<text x="501.9" y="2978.0" text-anchor="end">var</text>
+<text x="501.9" y="3020.0" text-anchor="end">valor</text>
+<text x="896.4" y="2978.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3062.0" text-anchor="end">var</text>
+<text x="501.9" y="3104.0" text-anchor="end">valor</text>
+<text x="896.4" y="3062.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3146.0" text-anchor="end">var</text>
+<text x="501.9" y="3188.0" text-anchor="end">valor</text>
+<text x="896.4" y="3146.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3230.0" text-anchor="end">var</text>
+<text x="501.9" y="3272.0" text-anchor="end">valor</text>
+<text x="896.4" y="3230.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3314.0" text-anchor="end">var</text>
+<text x="501.9" y="3356.0" text-anchor="end">valor</text>
+<text x="896.4" y="3314.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3398.0" text-anchor="end">var</text>
+<text x="501.9" y="3440.0" text-anchor="end">valor</text>
+<text x="896.4" y="3398.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3482.0" text-anchor="end">var</text>
+<text x="501.9" y="3524.0" text-anchor="end">valor</text>
+<text x="896.4" y="3482.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3566.0" text-anchor="end">var</text>
+<text x="501.9" y="3608.0" text-anchor="end">valor</text>
+<text x="896.4" y="3566.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3650.0" text-anchor="end">var</text>
+<text x="501.9" y="3692.0" text-anchor="end">valor</text>
+<text x="896.4" y="3650.0" text-anchor="end">tipo</text>
+<text x="501.9" y="3734.0" text-anchor="end">objetivo</text>
+<text x="501.9" y="3860.0" text-anchor="end">valor</text>
+<text x="896.4" y="3776.0" text-anchor="end">elem</text>
+<text x="896.4" y="3818.0" text-anchor="end">elem</text>
+<text x="896.4" y="3860.0" text-anchor="end">elem</text>
+<text x="896.4" y="3902.0" text-anchor="end">elem</text>
+<text x="896.4" y="3944.0" text-anchor="end">elem</text>
+<text x="1251.4" y="3860.0" text-anchor="end">operando</text>
+<text x="501.9" y="3986.0" text-anchor="end">objetivo</text>
+<text x="501.9" y="4028.0" text-anchor="end">valor</text>
+<text x="896.4" y="4028.0" text-anchor="end">funcion</text>
+<text x="501.9" y="4070.0" text-anchor="end">expr</text>
+<text x="896.4" y="4070.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4070.0" text-anchor="end">objeto</text>
+<text x="501.9" y="4154.0" text-anchor="end">expr</text>
+<text x="896.4" y="4112.0" text-anchor="end">funcion</text>
+<text x="896.4" y="4196.0" text-anchor="end">arg</text>
+<text x="1251.4" y="4154.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4196.0" text-anchor="end">arg</text>
+<text x="1251.4" y="4238.0" text-anchor="end">arg</text>
+<text x="501.9" y="4311.5" text-anchor="end">expr</text>
+<text x="896.4" y="4280.0" text-anchor="end">funcion</text>
+<text x="896.4" y="4343.0" text-anchor="end">arg</text>
+<text x="1251.4" y="4322.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4364.0" text-anchor="end">arg</text>
+<text x="1598.5" y="4364.0" text-anchor="end">operando</text>
+<text x="501.9" y="4437.5" text-anchor="end">expr</text>
+<text x="896.4" y="4406.0" text-anchor="end">funcion</text>
+<text x="896.4" y="4469.0" text-anchor="end">arg</text>
+<text x="1251.4" y="4448.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4490.0" text-anchor="end">arg</text>
+<text x="501.9" y="4563.5" text-anchor="end">expr</text>
+<text x="896.4" y="4532.0" text-anchor="end">funcion</text>
+<text x="896.4" y="4595.0" text-anchor="end">arg</text>
+<text x="1251.4" y="4574.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4616.0" text-anchor="end">arg</text>
+<text x="501.9" y="4694.8" text-anchor="end">expr</text>
+<text x="896.4" y="4658.0" text-anchor="end">funcion</text>
+<text x="896.4" y="4731.5" text-anchor="end">arg</text>
+<text x="1251.4" y="4700.0" text-anchor="end">funcion</text>
+<text x="1251.4" y="4763.0" text-anchor="end">arg</text>
+<text x="1598.5" y="4742.0" text-anchor="end">elem</text>
+<text x="1598.5" y="4784.0" text-anchor="end">elem</text>
+<text x="501.9" y="4826.0" text-anchor="end">objetivo</text>
+<text x="501.9" y="4889.0" text-anchor="end">valor</text>
+<text x="896.4" y="4868.0" text-anchor="end">izq</text>
+<text x="896.4" y="4910.0" text-anchor="end">der</text>
+<text x="501.9" y="4952.0" text-anchor="end">objetivo</text>
+<text x="501.9" y="5163.3" text-anchor="end">valor</text>
+<text x="896.4" y="5122.6" text-anchor="end">izq</text>
+<text x="896.4" y="5204.0" text-anchor="end">der</text>
+<text x="1251.4" y="5083.2" text-anchor="end">izq</text>
+<text x="1251.4" y="5162.0" text-anchor="end">der</text>
+<text x="1598.5" y="5046.5" text-anchor="end">izq</text>
+<text x="1598.5" y="5120.0" text-anchor="end">der</text>
+<text x="1929.8" y="5015.0" text-anchor="end">izq</text>
+<text x="1929.8" y="5078.0" text-anchor="end">der</text>
+<text x="2276.9" y="4994.0" text-anchor="end">izq</text>
+<text x="2276.9" y="5036.0" text-anchor="end">der</text>
+<text x="501.9" y="5246.0" text-anchor="end">objetivo</text>
+<text x="501.9" y="5414.0" text-anchor="end">valor</text>
+<text x="896.4" y="5351.0" text-anchor="end">izq</text>
+<text x="896.4" y="5477.0" text-anchor="end">der</text>
+<text x="1251.4" y="5309.0" text-anchor="end">izq</text>
+<text x="1251.4" y="5393.0" text-anchor="end">der</text>
+<text x="1598.5" y="5288.0" text-anchor="end">izq</text>
+<text x="1598.5" y="5330.0" text-anchor="end">der</text>
+<text x="1598.5" y="5393.0" text-anchor="end">operando</text>
+<text x="1929.8" y="5372.0" text-anchor="end">izq</text>
+<text x="1929.8" y="5414.0" text-anchor="end">der</text>
+<text x="1251.4" y="5456.0" text-anchor="end">izq</text>
+<text x="1251.4" y="5498.0" text-anchor="end">der</text></g>
+<g class="nodos">
+<g class="nodo cat-Definiciones"><title>Programa  (linea 7, columna 1)</title><rect x="28.0" y="2773.8" width="85.2" height="30" rx="8"/><text class="clase" x="39.0" y="2793.2" textLength="63.2" lengthAdjust="spacingAndGlyphs">Programa</text></g>
+<g class="nodo cat-Definiciones"><title>DefClase animal(object)  (linea 7, columna 1)</title><rect x="209.2" y="227.5" width="203.7" height="30" rx="8"/><text class="clase" x="220.2" y="247.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">DefClase</text><text class="valor" x="291.3" y="247.0" textLength="110.6" lengthAdjust="spacingAndGlyphs">animal(object)</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 8, columna 5)</title><rect x="508.9" y="49.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="68.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada makes_noise  (linea 8, columna 5), tipo bool</title><rect x="903.4" y="28.0" width="243.2" height="30" rx="8"/><text class="clase" x="914.4" y="47.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="47.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">makes_noise</text><text class="tipodato" x="1088.2" y="47.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Tipos"><title>Tipo bool  (linea 8, columna 18)</title><rect x="1258.4" y="28.0" width="93.1" height="30" rx="8"/><text class="clase" x="1269.4" y="47.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="47.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">bool</text></g>
+<g class="nodo cat-Literales"><title>LitBool False  (linea 8, columna 25), tipo bool</title><rect x="903.4" y="70.0" width="180.0" height="30" rx="8"/><text class="clase" x="914.4" y="89.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitBool</text><text class="valor" x="977.6" y="89.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">False</text><text class="tipodato" x="1025.0" y="89.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion make_noise  (linea 10, columna 5)</title><rect x="508.9" y="185.5" width="187.9" height="30" rx="8"/><text class="clase" x="519.9" y="205.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="606.8" y="205.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">make_noise</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada self  (linea 10, columna 20), tipo animal</title><rect x="903.4" y="112.0" width="203.7" height="30" rx="8"/><text class="clase" x="914.4" y="131.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="131.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1032.9" y="131.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Tipos"><title>Tipo animal  (linea 10, columna 26)</title><rect x="1258.4" y="112.0" width="108.9" height="30" rx="8"/><text class="clase" x="1269.4" y="131.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="131.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">animal</text></g>
+<g class="nodo cat-Tipos"><title>Tipo object  (linea 10, columna 39)</title><rect x="903.4" y="154.0" width="108.9" height="30" rx="8"/><text class="clase" x="914.4" y="173.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="173.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">object</text></g>
+<g class="nodo cat-Sentencias"><title>Si  (linea 11, columna 9)</title><rect x="903.4" y="259.0" width="37.8" height="30" rx="8"/><text class="clase" x="914.4" y="278.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">Si</text></g>
+<g class="nodo cat-Expresiones"><title>Miembro makes_noise  (linea 11, columna 12), tipo bool</title><rect x="1258.4" y="196.0" width="227.4" height="30" rx="8"/><text class="clase" x="1269.4" y="215.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Miembro</text><text class="valor" x="1332.6" y="215.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">makes_noise</text><text class="tipodato" x="1427.4" y="215.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador self  (linea 11, columna 12), tipo animal</title><rect x="1605.5" y="196.0" width="235.3" height="30" rx="8"/><text class="clase" x="1616.5" y="215.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="215.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1766.6" y="215.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 12, columna 13)</title><rect x="1258.4" y="259.0" width="124.7" height="30" rx="8"/><text class="clase" x="1269.4" y="278.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 12, columna 13), tipo &lt;None&gt;</title><rect x="1605.5" y="259.0" width="148.4" height="30" rx="8"/><text class="clase" x="1616.5" y="278.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="1679.7" y="278.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 12, columna 13)</title><rect x="1936.8" y="238.0" width="172.1" height="30" rx="8"/><text class="clase" x="1947.8" y="257.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="257.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 12, columna 19), tipo str</title><rect x="1936.8" y="280.0" width="124.7" height="30" rx="8"/><text class="clase" x="1947.8" y="299.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="2011.0" y="299.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Expresiones"><title>Miembro sound  (linea 12, columna 19)</title><rect x="2283.9" y="280.0" width="124.7" height="30" rx="8"/><text class="clase" x="2294.9" y="299.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Miembro</text><text class="valor" x="2358.1" y="299.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">sound</text></g>
+<g class="nodo cat-Nombres"><title>Identificador self  (linea 12, columna 19), tipo animal</title><rect x="2567.8" y="280.0" width="235.3" height="30" rx="8"/><text class="clase" x="2578.8" y="299.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2689.4" y="299.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="2728.9" y="299.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Sentencias"><title>Pasar  (linea 14, columna 13)</title><rect x="1258.4" y="322.0" width="61.5" height="30" rx="8"/><text class="clase" x="1269.4" y="341.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">Pasar</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion sound  (linea 16, columna 5)</title><rect x="508.9" y="406.0" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="425.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="606.8" y="425.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">sound</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada self  (linea 16, columna 15), tipo animal</title><rect x="903.4" y="364.0" width="203.7" height="30" rx="8"/><text class="clase" x="914.4" y="383.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="383.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1032.9" y="383.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Tipos"><title>Tipo animal  (linea 16, columna 21)</title><rect x="1258.4" y="364.0" width="108.9" height="30" rx="8"/><text class="clase" x="1269.4" y="383.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="383.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">animal</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 16, columna 34)</title><rect x="903.4" y="406.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="425.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="425.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 17, columna 9)</title><rect x="903.4" y="448.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="467.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;???&quot;  (linea 17, columna 16), tipo str</title><rect x="1258.4" y="448.0" width="180.0" height="30" rx="8"/><text class="clase" x="1269.4" y="467.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1340.5" y="467.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">&quot;???&quot;</text><text class="tipodato" x="1387.9" y="467.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefClase cow(animal)  (linea 19, columna 1)</title><rect x="209.2" y="589.8" width="180.0" height="30" rx="8"/><text class="clase" x="220.2" y="609.2" textLength="63.2" lengthAdjust="spacingAndGlyphs">DefClase</text><text class="valor" x="291.3" y="609.2" textLength="86.9" lengthAdjust="spacingAndGlyphs">cow(animal)</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion __init__  (linea 20, columna 5)</title><rect x="508.9" y="521.5" width="172.1" height="30" rx="8"/><text class="clase" x="519.9" y="541.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="606.8" y="541.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">__init__</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada self  (linea 20, columna 18), tipo cow</title><rect x="903.4" y="490.0" width="180.0" height="30" rx="8"/><text class="clase" x="914.4" y="509.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="509.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1032.9" y="509.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: cow</text></g>
+<g class="nodo cat-Tipos"><title>Tipo cow  (linea 20, columna 24)</title><rect x="1258.4" y="490.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="509.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="509.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">cow</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 21, columna 9)</title><rect x="903.4" y="553.0" width="101.0" height="30" rx="8"/><text class="clase" x="914.4" y="572.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Expresiones"><title>Miembro makes_noise  (linea 21, columna 9), tipo bool</title><rect x="1258.4" y="532.0" width="227.4" height="30" rx="8"/><text class="clase" x="1269.4" y="551.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Miembro</text><text class="valor" x="1332.6" y="551.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">makes_noise</text><text class="tipodato" x="1427.4" y="551.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador self  (linea 21, columna 9), tipo cow</title><rect x="1605.5" y="532.0" width="211.6" height="30" rx="8"/><text class="clase" x="1616.5" y="551.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="551.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1766.6" y="551.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: cow</text></g>
+<g class="nodo cat-Literales"><title>LitBool True  (linea 21, columna 28), tipo bool</title><rect x="1258.4" y="574.0" width="172.1" height="30" rx="8"/><text class="clase" x="1269.4" y="593.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitBool</text><text class="valor" x="1332.6" y="593.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">True</text><text class="tipodato" x="1372.1" y="593.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion sound  (linea 23, columna 5)</title><rect x="508.9" y="658.0" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="677.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="606.8" y="677.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">sound</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada self  (linea 23, columna 15), tipo cow</title><rect x="903.4" y="616.0" width="180.0" height="30" rx="8"/><text class="clase" x="914.4" y="635.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="635.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">self</text><text class="tipodato" x="1032.9" y="635.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: cow</text></g>
+<g class="nodo cat-Tipos"><title>Tipo cow  (linea 23, columna 21)</title><rect x="1258.4" y="616.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="635.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="635.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">cow</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 23, columna 31)</title><rect x="903.4" y="658.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="677.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="677.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 24, columna 9)</title><rect x="903.4" y="700.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="719.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;moo&quot;  (linea 24, columna 16), tipo str</title><rect x="1258.4" y="700.0" width="180.0" height="30" rx="8"/><text class="clase" x="1269.4" y="719.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1340.5" y="719.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">&quot;moo&quot;</text><text class="tipodato" x="1387.9" y="719.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion is_zero  (linea 26, columna 1)</title><rect x="209.2" y="920.5" width="164.2" height="30" rx="8"/><text class="clase" x="220.2" y="940.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="307.1" y="940.0" textLength="55.3" lengthAdjust="spacingAndGlyphs">is_zero</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada items  (linea 26, columna 13), tipo [int]</title><rect x="508.9" y="742.0" width="203.7" height="30" rx="8"/><text class="clase" x="519.9" y="761.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="761.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">items</text><text class="tipodato" x="646.3" y="761.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Tipos"><title>TipoLista  (linea 26, columna 20)</title><rect x="903.4" y="742.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="761.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">TipoLista</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 26, columna 21)</title><rect x="1258.4" y="742.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="761.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="761.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada idx  (linea 26, columna 27), tipo int</title><rect x="508.9" y="784.0" width="172.1" height="30" rx="8"/><text class="clase" x="519.9" y="803.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="803.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">idx</text><text class="tipodato" x="630.5" y="803.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 26, columna 32)</title><rect x="903.4" y="784.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="803.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="803.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo bool  (linea 26, columna 40)</title><rect x="508.9" y="826.0" width="93.1" height="30" rx="8"/><text class="clase" x="519.9" y="845.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="559.4" y="845.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">bool</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 27, columna 5)</title><rect x="508.9" y="889.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="908.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada val  (linea 27, columna 5), tipo int</title><rect x="903.4" y="868.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="887.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="887.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">val</text><text class="tipodato" x="1025.0" y="887.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 27, columna 10)</title><rect x="1258.4" y="868.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="887.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="887.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 27, columna 16), tipo int</title><rect x="903.4" y="910.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="929.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="929.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1009.2" y="929.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 28, columna 5)</title><rect x="508.9" y="983.5" width="101.0" height="30" rx="8"/><text class="clase" x="519.9" y="1003.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador val  (linea 28, columna 5), tipo int</title><rect x="903.4" y="952.0" width="203.7" height="30" rx="8"/><text class="clase" x="914.4" y="971.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="971.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">val</text><text class="tipodato" x="1056.6" y="971.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>Indice  (linea 28, columna 11), tipo int</title><rect x="903.4" y="1015.0" width="116.8" height="30" rx="8"/><text class="clase" x="914.4" y="1034.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">Indice</text><text class="tipodato" x="969.7" y="1034.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador items  (linea 28, columna 11), tipo [int]</title><rect x="1258.4" y="994.0" width="235.3" height="30" rx="8"/><text class="clase" x="1269.4" y="1013.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="1013.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">items</text><text class="tipodato" x="1427.4" y="1013.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Nombres"><title>Identificador idx  (linea 28, columna 17), tipo int</title><rect x="1258.4" y="1036.0" width="203.7" height="30" rx="8"/><text class="clase" x="1269.4" y="1055.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="1055.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">idx</text><text class="tipodato" x="1411.6" y="1055.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 29, columna 5)</title><rect x="508.9" y="1099.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="1118.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria ==  (linea 29, columna 12), tipo bool</title><rect x="903.4" y="1099.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="1118.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="1118.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">==</text><text class="tipodato" x="1017.1" y="1118.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador val  (linea 29, columna 12), tipo int</title><rect x="1258.4" y="1078.0" width="203.7" height="30" rx="8"/><text class="clase" x="1269.4" y="1097.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="1097.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">val</text><text class="tipodato" x="1411.6" y="1097.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 29, columna 19), tipo int</title><rect x="1258.4" y="1120.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="1139.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="1139.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1364.2" y="1139.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion clasifica  (linea 31, columna 1)</title><rect x="209.2" y="1268.3" width="180.0" height="30" rx="8"/><text class="clase" x="220.2" y="1287.8" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="307.1" y="1287.8" textLength="71.1" lengthAdjust="spacingAndGlyphs">clasifica</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada n  (linea 31, columna 15), tipo int</title><rect x="508.9" y="1162.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="1181.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="1181.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">n</text><text class="tipodato" x="614.7" y="1181.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 31, columna 18)</title><rect x="903.4" y="1162.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="1181.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="1181.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 31, columna 26)</title><rect x="508.9" y="1204.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="1223.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="559.4" y="1223.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Sentencias"><title>Si  (linea 32, columna 5)</title><rect x="508.9" y="1374.6" width="37.8" height="30" rx="8"/><text class="clase" x="519.9" y="1394.1" textLength="15.8" lengthAdjust="spacingAndGlyphs">Si</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria &lt;  (linea 32, columna 8), tipo bool</title><rect x="903.4" y="1267.0" width="164.2" height="30" rx="8"/><text class="clase" x="914.4" y="1286.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="1286.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">&lt;</text><text class="tipodato" x="1009.2" y="1286.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador n  (linea 32, columna 8), tipo int</title><rect x="1258.4" y="1246.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="1265.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="1265.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">n</text><text class="tipodato" x="1395.8" y="1265.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 32, columna 12), tipo int</title><rect x="1258.4" y="1288.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="1307.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="1307.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1364.2" y="1307.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 33, columna 9)</title><rect x="903.4" y="1330.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="1349.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;negativo&quot;  (linea 33, columna 16), tipo str</title><rect x="1258.4" y="1330.0" width="219.5" height="30" rx="8"/><text class="clase" x="1269.4" y="1349.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1340.5" y="1349.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">&quot;negativo&quot;</text><text class="tipodato" x="1427.4" y="1349.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Si  (linea 34, columna 5)</title><rect x="903.4" y="1482.2" width="37.8" height="30" rx="8"/><text class="clase" x="914.4" y="1501.8" textLength="15.8" lengthAdjust="spacingAndGlyphs">Si</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria ==  (linea 34, columna 10), tipo bool</title><rect x="1258.4" y="1393.0" width="172.1" height="30" rx="8"/><text class="clase" x="1269.4" y="1412.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="1412.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">==</text><text class="tipodato" x="1372.1" y="1412.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador n  (linea 34, columna 10), tipo int</title><rect x="1605.5" y="1372.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="1391.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="1391.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">n</text><text class="tipodato" x="1742.9" y="1391.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 34, columna 15), tipo int</title><rect x="1605.5" y="1414.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="1433.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1695.5" y="1433.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1711.3" y="1433.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 35, columna 9)</title><rect x="1258.4" y="1456.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="1475.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;cero&quot;  (linea 35, columna 16), tipo str</title><rect x="1605.5" y="1456.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="1475.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1687.6" y="1475.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">&quot;cero&quot;</text><text class="tipodato" x="1742.9" y="1475.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Si  (linea 36, columna 5)</title><rect x="1258.4" y="1571.5" width="37.8" height="30" rx="8"/><text class="clase" x="1269.4" y="1591.0" textLength="15.8" lengthAdjust="spacingAndGlyphs">Si</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria &lt;=  (linea 36, columna 10), tipo bool</title><rect x="1605.5" y="1519.0" width="172.1" height="30" rx="8"/><text class="clase" x="1616.5" y="1538.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1695.5" y="1538.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">&lt;=</text><text class="tipodato" x="1719.2" y="1538.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador n  (linea 36, columna 10), tipo int</title><rect x="1936.8" y="1498.0" width="187.9" height="30" rx="8"/><text class="clase" x="1947.8" y="1517.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="1517.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">n</text><text class="tipodato" x="2074.2" y="1517.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 9  (linea 36, columna 15), tipo int</title><rect x="1936.8" y="1540.0" width="156.3" height="30" rx="8"/><text class="clase" x="1947.8" y="1559.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="2026.8" y="1559.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">9</text><text class="tipodato" x="2042.6" y="1559.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 37, columna 9)</title><rect x="1605.5" y="1582.0" width="85.2" height="30" rx="8"/><text class="clase" x="1616.5" y="1601.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;digito&quot;  (linea 37, columna 16), tipo str</title><rect x="1936.8" y="1582.0" width="203.7" height="30" rx="8"/><text class="clase" x="1947.8" y="1601.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="2018.9" y="1601.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">&quot;digito&quot;</text><text class="tipodato" x="2090.0" y="1601.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 39, columna 9)</title><rect x="1605.5" y="1624.0" width="85.2" height="30" rx="8"/><text class="clase" x="1616.5" y="1643.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;grande&quot;  (linea 39, columna 16), tipo str</title><rect x="1936.8" y="1624.0" width="203.7" height="30" rx="8"/><text class="clase" x="1947.8" y="1643.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="2018.9" y="1643.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">&quot;grande&quot;</text><text class="tipodato" x="2090.0" y="1643.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion suma_lista  (linea 41, columna 1)</title><rect x="209.2" y="2002.0" width="187.9" height="30" rx="8"/><text class="clase" x="220.2" y="2021.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="307.1" y="2021.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">suma_lista</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada nums  (linea 41, columna 16), tipo [int]</title><rect x="508.9" y="1666.0" width="195.8" height="30" rx="8"/><text class="clase" x="519.9" y="1685.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="1685.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">nums</text><text class="tipodato" x="638.4" y="1685.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Tipos"><title>TipoLista  (linea 41, columna 22)</title><rect x="903.4" y="1666.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="1685.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">TipoLista</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 41, columna 23)</title><rect x="1258.4" y="1666.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="1685.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="1685.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 41, columna 32)</title><rect x="508.9" y="1708.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="1727.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="559.4" y="1727.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 42, columna 5)</title><rect x="508.9" y="1771.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="1790.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada total  (linea 42, columna 5), tipo int</title><rect x="903.4" y="1750.0" width="187.9" height="30" rx="8"/><text class="clase" x="914.4" y="1769.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="1769.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">total</text><text class="tipodato" x="1040.8" y="1769.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 42, columna 12)</title><rect x="1258.4" y="1750.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="1769.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="1769.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 42, columna 18), tipo int</title><rect x="903.4" y="1792.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="1811.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="1811.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1009.2" y="1811.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 43, columna 5)</title><rect x="508.9" y="1855.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="1874.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada i  (linea 43, columna 5), tipo int</title><rect x="903.4" y="1834.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="1853.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="1853.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">i</text><text class="tipodato" x="1009.2" y="1853.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 43, columna 8)</title><rect x="1258.4" y="1834.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="1853.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="1853.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 43, columna 14), tipo int</title><rect x="903.4" y="1876.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="1895.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="1895.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1009.2" y="1895.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Mientras  (linea 44, columna 5)</title><rect x="508.9" y="2096.5" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="2116.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">Mientras</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria &lt;  (linea 44, columna 11), tipo bool</title><rect x="903.4" y="1949.5" width="164.2" height="30" rx="8"/><text class="clase" x="914.4" y="1969.0" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="1969.0" textLength="7.9" lengthAdjust="spacingAndGlyphs">&lt;</text><text class="tipodato" x="1009.2" y="1969.0" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador i  (linea 44, columna 11), tipo int</title><rect x="1258.4" y="1918.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="1937.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="1937.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">i</text><text class="tipodato" x="1395.8" y="1937.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 44, columna 15), tipo int</title><rect x="1258.4" y="1981.0" width="124.7" height="30" rx="8"/><text class="clase" x="1269.4" y="2000.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="1332.6" y="2000.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador len  (linea 44, columna 15)</title><rect x="1605.5" y="1960.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="1979.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="1979.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">len</text></g>
+<g class="nodo cat-Nombres"><title>Identificador nums  (linea 44, columna 19), tipo [int]</title><rect x="1605.5" y="2002.0" width="227.4" height="30" rx="8"/><text class="clase" x="1616.5" y="2021.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="2021.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">nums</text><text class="tipodato" x="1766.6" y="2021.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 45, columna 9)</title><rect x="903.4" y="2080.8" width="101.0" height="30" rx="8"/><text class="clase" x="914.4" y="2100.2" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador total  (linea 45, columna 9), tipo int</title><rect x="1258.4" y="2044.0" width="219.5" height="30" rx="8"/><text class="clase" x="1269.4" y="2063.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="2063.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">total</text><text class="tipodato" x="1427.4" y="2063.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria +  (linea 45, columna 17), tipo int</title><rect x="1258.4" y="2117.5" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="2137.0" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="2137.0" textLength="7.9" lengthAdjust="spacingAndGlyphs">+</text><text class="tipodato" x="1364.2" y="2137.0" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador total  (linea 45, columna 17), tipo int</title><rect x="1605.5" y="2086.0" width="219.5" height="30" rx="8"/><text class="clase" x="1616.5" y="2105.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="2105.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">total</text><text class="tipodato" x="1774.5" y="2105.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>Indice  (linea 45, columna 25), tipo int</title><rect x="1605.5" y="2149.0" width="116.8" height="30" rx="8"/><text class="clase" x="1616.5" y="2168.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">Indice</text><text class="tipodato" x="1671.8" y="2168.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador nums  (linea 45, columna 25), tipo [int]</title><rect x="1936.8" y="2128.0" width="227.4" height="30" rx="8"/><text class="clase" x="1947.8" y="2147.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="2147.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">nums</text><text class="tipodato" x="2097.9" y="2147.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Nombres"><title>Identificador i  (linea 45, columna 30), tipo int</title><rect x="1936.8" y="2170.0" width="187.9" height="30" rx="8"/><text class="clase" x="1947.8" y="2189.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="2189.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">i</text><text class="tipodato" x="2074.2" y="2189.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 46, columna 9)</title><rect x="903.4" y="2243.5" width="101.0" height="30" rx="8"/><text class="clase" x="914.4" y="2263.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador i  (linea 46, columna 9), tipo int</title><rect x="1258.4" y="2212.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="2231.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="2231.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">i</text><text class="tipodato" x="1395.8" y="2231.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria +  (linea 46, columna 13), tipo int</title><rect x="1258.4" y="2275.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="2294.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="2294.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">+</text><text class="tipodato" x="1364.2" y="2294.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador i  (linea 46, columna 13), tipo int</title><rect x="1605.5" y="2254.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="2273.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="2273.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">i</text><text class="tipodato" x="1742.9" y="2273.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 1  (linea 46, columna 17), tipo int</title><rect x="1605.5" y="2296.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="2315.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1695.5" y="2315.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">1</text><text class="tipodato" x="1711.3" y="2315.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 47, columna 5)</title><rect x="508.9" y="2338.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="2357.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Nombres"><title>Identificador total  (linea 47, columna 12), tipo int</title><rect x="903.4" y="2338.0" width="219.5" height="30" rx="8"/><text class="clase" x="914.4" y="2357.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="2357.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">total</text><text class="tipodato" x="1072.4" y="2357.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefFuncion concatena  (linea 49, columna 1)</title><rect x="209.2" y="2611.0" width="180.0" height="30" rx="8"/><text class="clase" x="220.2" y="2630.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">DefFuncion</text><text class="valor" x="307.1" y="2630.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">concatena</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada palabras  (linea 49, columna 15), tipo [str]</title><rect x="508.9" y="2380.0" width="227.4" height="30" rx="8"/><text class="clase" x="519.9" y="2399.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="2399.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">palabras</text><text class="tipodato" x="670.0" y="2399.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [str]</text></g>
+<g class="nodo cat-Tipos"><title>TipoLista  (linea 49, columna 25)</title><rect x="903.4" y="2380.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="2399.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">TipoLista</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 49, columna 26)</title><rect x="1258.4" y="2380.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="2399.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="2399.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 49, columna 35)</title><rect x="508.9" y="2422.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="2441.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="559.4" y="2441.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 50, columna 5)</title><rect x="508.9" y="2485.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="2504.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada resultado  (linea 50, columna 5), tipo str</title><rect x="903.4" y="2464.0" width="219.5" height="30" rx="8"/><text class="clase" x="914.4" y="2483.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="2483.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">resultado</text><text class="tipodato" x="1072.4" y="2483.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 50, columna 16)</title><rect x="1258.4" y="2464.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="2483.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="2483.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;&quot;  (linea 50, columna 22), tipo str</title><rect x="903.4" y="2506.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="2525.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="985.5" y="2525.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">&quot;&quot;</text><text class="tipodato" x="1009.2" y="2525.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 51, columna 5)</title><rect x="508.9" y="2569.0" width="108.9" height="30" rx="8"/><text class="clase" x="519.9" y="2588.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada palabra  (linea 51, columna 5), tipo str</title><rect x="903.4" y="2548.0" width="203.7" height="30" rx="8"/><text class="clase" x="914.4" y="2567.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="993.4" y="2567.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">palabra</text><text class="tipodato" x="1056.6" y="2567.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 51, columna 14)</title><rect x="1258.4" y="2548.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="2567.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="2567.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;&quot;  (linea 51, columna 20), tipo str</title><rect x="903.4" y="2590.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="2609.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="985.5" y="2609.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">&quot;&quot;</text><text class="tipodato" x="1009.2" y="2609.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Para palabra  (linea 52, columna 5)</title><rect x="508.9" y="2676.6" width="116.8" height="30" rx="8"/><text class="clase" x="519.9" y="2696.1" textLength="31.6" lengthAdjust="spacingAndGlyphs">Para</text><text class="valor" x="559.4" y="2696.1" textLength="55.3" lengthAdjust="spacingAndGlyphs">palabra</text></g>
+<g class="nodo cat-Nombres"><title>Identificador palabras  (linea 52, columna 20), tipo [str]</title><rect x="903.4" y="2632.0" width="259.0" height="30" rx="8"/><text class="clase" x="914.4" y="2651.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="2651.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">palabras</text><text class="tipodato" x="1096.1" y="2651.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [str]</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 53, columna 9)</title><rect x="903.4" y="2721.2" width="101.0" height="30" rx="8"/><text class="clase" x="914.4" y="2740.8" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado  (linea 53, columna 9), tipo str</title><rect x="1258.4" y="2674.0" width="251.1" height="30" rx="8"/><text class="clase" x="1269.4" y="2693.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="2693.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">resultado</text><text class="tipodato" x="1459.0" y="2693.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria +  (linea 53, columna 21), tipo str</title><rect x="1258.4" y="2768.5" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="2788.0" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="2788.0" textLength="7.9" lengthAdjust="spacingAndGlyphs">+</text><text class="tipodato" x="1364.2" y="2788.0" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria +  (linea 53, columna 21), tipo str</title><rect x="1605.5" y="2737.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="2756.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1695.5" y="2756.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">+</text><text class="tipodato" x="1711.3" y="2756.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado  (linea 53, columna 21), tipo str</title><rect x="1936.8" y="2716.0" width="251.1" height="30" rx="8"/><text class="clase" x="1947.8" y="2735.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="2735.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">resultado</text><text class="tipodato" x="2137.4" y="2735.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Nombres"><title>Identificador palabra  (linea 53, columna 33), tipo str</title><rect x="1936.8" y="2758.0" width="235.3" height="30" rx="8"/><text class="clase" x="1947.8" y="2777.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="2777.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">palabra</text><text class="tipodato" x="2121.6" y="2777.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot; &quot;  (linea 53, columna 43), tipo str</title><rect x="1605.5" y="2800.0" width="164.2" height="30" rx="8"/><text class="clase" x="1616.5" y="2819.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1687.6" y="2819.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">&quot; &quot;</text><text class="tipodato" x="1719.2" y="2819.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Retornar  (linea 54, columna 5)</title><rect x="508.9" y="2842.0" width="85.2" height="30" rx="8"/><text class="clase" x="519.9" y="2861.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">Retornar</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado  (linea 54, columna 12), tipo str</title><rect x="903.4" y="2842.0" width="251.1" height="30" rx="8"/><text class="clase" x="914.4" y="2861.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="2861.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">resultado</text><text class="tipodato" x="1104.0" y="2861.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 60, columna 1)</title><rect x="209.2" y="2905.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="2924.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada mylist  (linea 60, columna 1), tipo [int]</title><rect x="508.9" y="2884.0" width="211.6" height="30" rx="8"/><text class="clase" x="519.9" y="2903.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="2903.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">mylist</text><text class="tipodato" x="654.2" y="2903.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Tipos"><title>TipoLista  (linea 60, columna 9)</title><rect x="903.4" y="2884.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="2903.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">TipoLista</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 60, columna 10)</title><rect x="1258.4" y="2884.0" width="85.2" height="30" rx="8"/><text class="clase" x="1269.4" y="2903.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="1308.9" y="2903.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitNone None  (linea 60, columna 17), tipo &lt;None&gt;</title><rect x="508.9" y="2926.0" width="187.9" height="30" rx="8"/><text class="clase" x="519.9" y="2945.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitNone</text><text class="valor" x="583.1" y="2945.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">None</text><text class="tipodato" x="622.6" y="2945.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 61, columna 1)</title><rect x="209.2" y="2989.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3008.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada c  (linea 61, columna 1), tipo animal</title><rect x="508.9" y="2968.0" width="180.0" height="30" rx="8"/><text class="clase" x="519.9" y="2987.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="2987.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">c</text><text class="tipodato" x="614.7" y="2987.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Tipos"><title>Tipo animal  (linea 61, columna 4)</title><rect x="903.4" y="2968.0" width="108.9" height="30" rx="8"/><text class="clase" x="914.4" y="2987.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="2987.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">animal</text></g>
+<g class="nodo cat-Literales"><title>LitNone None  (linea 61, columna 13), tipo &lt;None&gt;</title><rect x="508.9" y="3010.0" width="187.9" height="30" rx="8"/><text class="clase" x="519.9" y="3029.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitNone</text><text class="valor" x="583.1" y="3029.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">None</text><text class="tipodato" x="622.6" y="3029.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 62, columna 1)</title><rect x="209.2" y="3073.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3092.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada nombre  (linea 62, columna 1), tipo str</title><rect x="508.9" y="3052.0" width="195.8" height="30" rx="8"/><text class="clase" x="519.9" y="3071.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3071.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">nombre</text><text class="tipodato" x="654.2" y="3071.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Tipos"><title>Tipo str  (linea 62, columna 9)</title><rect x="903.4" y="3052.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="3071.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3071.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">str</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;He&quot;llo&quot;	World
+&quot;  (linea 62, columna 15), tipo str</title><rect x="508.9" y="3094.0" width="274.8" height="30" rx="8"/><text class="clase" x="519.9" y="3113.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="591.0" y="3113.5" textLength="134.3" lengthAdjust="spacingAndGlyphs">&quot;He&quot;llo&quot;	World\n&quot;</text><text class="tipodato" x="733.2" y="3113.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 63, columna 1)</title><rect x="209.2" y="3157.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3176.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada x  (linea 63, columna 1), tipo object</title><rect x="508.9" y="3136.0" width="180.0" height="30" rx="8"/><text class="clase" x="519.9" y="3155.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3155.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">x</text><text class="tipodato" x="614.7" y="3155.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: object</text></g>
+<g class="nodo cat-Tipos"><title>Tipo object  (linea 63, columna 4)</title><rect x="903.4" y="3136.0" width="108.9" height="30" rx="8"/><text class="clase" x="914.4" y="3155.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3155.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">object</text></g>
+<g class="nodo cat-Literales"><title>LitNone None  (linea 63, columna 13), tipo &lt;None&gt;</title><rect x="508.9" y="3178.0" width="187.9" height="30" rx="8"/><text class="clase" x="519.9" y="3197.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitNone</text><text class="valor" x="583.1" y="3197.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">None</text><text class="tipodato" x="622.6" y="3197.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 64, columna 1)</title><rect x="209.2" y="3241.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3260.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada y  (linea 64, columna 1), tipo object</title><rect x="508.9" y="3220.0" width="180.0" height="30" rx="8"/><text class="clase" x="519.9" y="3239.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3239.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">y</text><text class="tipodato" x="614.7" y="3239.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: object</text></g>
+<g class="nodo cat-Tipos"><title>Tipo object  (linea 64, columna 4)</title><rect x="903.4" y="3220.0" width="108.9" height="30" rx="8"/><text class="clase" x="914.4" y="3239.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3239.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">object</text></g>
+<g class="nodo cat-Literales"><title>LitNone None  (linea 64, columna 13), tipo &lt;None&gt;</title><rect x="508.9" y="3262.0" width="187.9" height="30" rx="8"/><text class="clase" x="519.9" y="3281.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitNone</text><text class="valor" x="583.1" y="3281.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">None</text><text class="tipodato" x="622.6" y="3281.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 65, columna 1)</title><rect x="209.2" y="3325.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3344.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada resultado_id  (linea 65, columna 1), tipo bool</title><rect x="508.9" y="3304.0" width="251.1" height="30" rx="8"/><text class="clase" x="519.9" y="3323.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3323.5" textLength="94.8" lengthAdjust="spacingAndGlyphs">resultado_id</text><text class="tipodato" x="701.6" y="3323.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Tipos"><title>Tipo bool  (linea 65, columna 15)</title><rect x="903.4" y="3304.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="3323.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3323.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">bool</text></g>
+<g class="nodo cat-Literales"><title>LitBool False  (linea 65, columna 22), tipo bool</title><rect x="508.9" y="3346.0" width="180.0" height="30" rx="8"/><text class="clase" x="519.9" y="3365.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitBool</text><text class="valor" x="583.1" y="3365.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">False</text><text class="tipodato" x="630.5" y="3365.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 66, columna 1)</title><rect x="209.2" y="3409.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3428.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada a  (linea 66, columna 1), tipo int</title><rect x="508.9" y="3388.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="3407.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3407.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">a</text><text class="tipodato" x="614.7" y="3407.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 66, columna 4)</title><rect x="903.4" y="3388.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="3407.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3407.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 1  (linea 66, columna 10), tipo int</title><rect x="508.9" y="3430.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="3449.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="598.9" y="3449.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">1</text><text class="tipodato" x="614.7" y="3449.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 67, columna 1)</title><rect x="209.2" y="3493.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3512.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada b  (linea 67, columna 1), tipo int</title><rect x="508.9" y="3472.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="3491.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3491.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">b</text><text class="tipodato" x="614.7" y="3491.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 67, columna 4)</title><rect x="903.4" y="3472.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="3491.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3491.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 2  (linea 67, columna 10), tipo int</title><rect x="508.9" y="3514.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="3533.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="598.9" y="3533.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">2</text><text class="tipodato" x="614.7" y="3533.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 68, columna 1)</title><rect x="209.2" y="3577.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3596.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada resultado_op  (linea 68, columna 1), tipo int</title><rect x="508.9" y="3556.0" width="243.2" height="30" rx="8"/><text class="clase" x="519.9" y="3575.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3575.5" textLength="94.8" lengthAdjust="spacingAndGlyphs">resultado_op</text><text class="tipodato" x="701.6" y="3575.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Tipos"><title>Tipo int  (linea 68, columna 15)</title><rect x="903.4" y="3556.0" width="85.2" height="30" rx="8"/><text class="clase" x="914.4" y="3575.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3575.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 68, columna 21), tipo int</title><rect x="508.9" y="3598.0" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="3617.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="598.9" y="3617.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="614.7" y="3617.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Definiciones"><title>DefVariable  (linea 69, columna 1)</title><rect x="209.2" y="3661.0" width="108.9" height="30" rx="8"/><text class="clase" x="220.2" y="3680.5" textLength="86.9" lengthAdjust="spacingAndGlyphs">DefVariable</text></g>
+<g class="nodo cat-Definiciones"><title>VarTipada resultado_bool  (linea 69, columna 1), tipo bool</title><rect x="508.9" y="3640.0" width="266.9" height="30" rx="8"/><text class="clase" x="519.9" y="3659.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">VarTipada</text><text class="valor" x="598.9" y="3659.5" textLength="110.6" lengthAdjust="spacingAndGlyphs">resultado_bool</text><text class="tipodato" x="717.4" y="3659.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Tipos"><title>Tipo bool  (linea 69, columna 17)</title><rect x="903.4" y="3640.0" width="93.1" height="30" rx="8"/><text class="clase" x="914.4" y="3659.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">Tipo</text><text class="valor" x="953.9" y="3659.5" textLength="31.6" lengthAdjust="spacingAndGlyphs">bool</text></g>
+<g class="nodo cat-Literales"><title>LitBool False  (linea 69, columna 24), tipo bool</title><rect x="508.9" y="3682.0" width="180.0" height="30" rx="8"/><text class="clase" x="519.9" y="3701.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">LitBool</text><text class="valor" x="583.1" y="3701.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">False</text><text class="tipodato" x="630.5" y="3701.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 71, columna 1)</title><rect x="209.2" y="3787.0" width="101.0" height="30" rx="8"/><text class="clase" x="220.2" y="3806.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador mylist  (linea 71, columna 1), tipo [int]</title><rect x="508.9" y="3724.0" width="243.2" height="30" rx="8"/><text class="clase" x="519.9" y="3743.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="630.5" y="3743.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">mylist</text><text class="tipodato" x="685.8" y="3743.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Expresiones"><title>LitLista  (linea 71, columna 10), tipo [int]</title><rect x="508.9" y="3850.0" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="3869.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitLista</text><text class="tipodato" x="591.0" y="3869.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 1  (linea 71, columna 11), tipo int</title><rect x="903.4" y="3766.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="3785.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="3785.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">1</text><text class="tipodato" x="1009.2" y="3785.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 71, columna 14), tipo int</title><rect x="903.4" y="3808.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="3827.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="3827.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1009.2" y="3827.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpUnaria -  (linea 71, columna 17), tipo int</title><rect x="903.4" y="3850.0" width="148.4" height="30" rx="8"/><text class="clase" x="914.4" y="3869.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">OpUnaria</text><text class="valor" x="985.5" y="3869.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">-</text><text class="tipodato" x="1001.3" y="3869.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 3  (linea 71, columna 18), tipo int</title><rect x="1258.4" y="3850.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="3869.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="3869.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">3</text><text class="tipodato" x="1364.2" y="3869.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 42  (linea 71, columna 21), tipo int</title><rect x="903.4" y="3892.0" width="164.2" height="30" rx="8"/><text class="clase" x="914.4" y="3911.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="3911.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">42</text><text class="tipodato" x="1017.1" y="3911.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 2147483647  (linea 71, columna 25), tipo int</title><rect x="903.4" y="3934.0" width="227.4" height="30" rx="8"/><text class="clase" x="914.4" y="3953.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="3953.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">2147483647</text><text class="tipodato" x="1080.3" y="3953.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 72, columna 1)</title><rect x="209.2" y="3997.0" width="101.0" height="30" rx="8"/><text class="clase" x="220.2" y="4016.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador c  (linea 72, columna 1), tipo animal</title><rect x="508.9" y="3976.0" width="211.6" height="30" rx="8"/><text class="clase" x="519.9" y="3995.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="630.5" y="3995.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">c</text><text class="tipodato" x="646.3" y="3995.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 72, columna 5), tipo cow</title><rect x="508.9" y="4018.0" width="124.7" height="30" rx="8"/><text class="clase" x="519.9" y="4037.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4037.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: cow</text></g>
+<g class="nodo cat-Nombres"><title>Identificador cow  (linea 72, columna 5)</title><rect x="903.4" y="4018.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="4037.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4037.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">cow</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 73, columna 1)</title><rect x="209.2" y="4060.0" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4079.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 73, columna 1), tipo object</title><rect x="508.9" y="4060.0" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4079.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4079.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: object</text></g>
+<g class="nodo cat-Expresiones"><title>Miembro make_noise  (linea 73, columna 1)</title><rect x="903.4" y="4060.0" width="164.2" height="30" rx="8"/><text class="clase" x="914.4" y="4079.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Miembro</text><text class="valor" x="977.6" y="4079.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">make_noise</text></g>
+<g class="nodo cat-Nombres"><title>Identificador c  (linea 73, columna 1), tipo animal</title><rect x="1258.4" y="4060.0" width="211.6" height="30" rx="8"/><text class="clase" x="1269.4" y="4079.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4079.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">c</text><text class="tipodato" x="1395.8" y="4079.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: animal</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 75, columna 1)</title><rect x="209.2" y="4144.0" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4163.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 75, columna 1), tipo &lt;None&gt;</title><rect x="508.9" y="4144.0" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4163.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4163.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 75, columna 1)</title><rect x="903.4" y="4102.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="4121.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4121.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 75, columna 7), tipo bool</title><rect x="903.4" y="4186.0" width="132.6" height="30" rx="8"/><text class="clase" x="914.4" y="4205.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="977.6" y="4205.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador is_zero  (linea 75, columna 7)</title><rect x="1258.4" y="4144.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="4163.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4163.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">is_zero</text></g>
+<g class="nodo cat-Nombres"><title>Identificador mylist  (linea 75, columna 15), tipo [int]</title><rect x="1258.4" y="4186.0" width="243.2" height="30" rx="8"/><text class="clase" x="1269.4" y="4205.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4205.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">mylist</text><text class="tipodato" x="1435.3" y="4205.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 1  (linea 75, columna 23), tipo int</title><rect x="1258.4" y="4228.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="4247.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="4247.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">1</text><text class="tipodato" x="1364.2" y="4247.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 76, columna 1)</title><rect x="209.2" y="4301.5" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4321.0" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 76, columna 1), tipo &lt;None&gt;</title><rect x="508.9" y="4301.5" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4321.0" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4321.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 76, columna 1)</title><rect x="903.4" y="4270.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="4289.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4289.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 76, columna 7), tipo str</title><rect x="903.4" y="4333.0" width="124.7" height="30" rx="8"/><text class="clase" x="914.4" y="4352.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="977.6" y="4352.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Nombres"><title>Identificador clasifica  (linea 76, columna 7)</title><rect x="1258.4" y="4312.0" width="203.7" height="30" rx="8"/><text class="clase" x="1269.4" y="4331.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4331.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">clasifica</text></g>
+<g class="nodo cat-Expresiones"><title>OpUnaria -  (linea 76, columna 17), tipo int</title><rect x="1258.4" y="4354.0" width="148.4" height="30" rx="8"/><text class="clase" x="1269.4" y="4373.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">OpUnaria</text><text class="valor" x="1340.5" y="4373.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">-</text><text class="tipodato" x="1356.3" y="4373.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 5  (linea 76, columna 18), tipo int</title><rect x="1605.5" y="4354.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="4373.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1695.5" y="4373.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">5</text><text class="tipodato" x="1711.3" y="4373.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 77, columna 1)</title><rect x="209.2" y="4427.5" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4447.0" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 77, columna 1), tipo &lt;None&gt;</title><rect x="508.9" y="4427.5" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4447.0" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4447.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 77, columna 1)</title><rect x="903.4" y="4396.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="4415.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4415.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 77, columna 7), tipo str</title><rect x="903.4" y="4459.0" width="124.7" height="30" rx="8"/><text class="clase" x="914.4" y="4478.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="977.6" y="4478.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Nombres"><title>Identificador clasifica  (linea 77, columna 7)</title><rect x="1258.4" y="4438.0" width="203.7" height="30" rx="8"/><text class="clase" x="1269.4" y="4457.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4457.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">clasifica</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 0  (linea 77, columna 17), tipo int</title><rect x="1258.4" y="4480.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="4499.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="4499.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">0</text><text class="tipodato" x="1364.2" y="4499.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 78, columna 1)</title><rect x="209.2" y="4553.5" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4573.0" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 78, columna 1), tipo &lt;None&gt;</title><rect x="508.9" y="4553.5" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4573.0" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4573.0" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 78, columna 1)</title><rect x="903.4" y="4522.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="4541.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4541.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 78, columna 7), tipo int</title><rect x="903.4" y="4585.0" width="124.7" height="30" rx="8"/><text class="clase" x="914.4" y="4604.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="977.6" y="4604.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador suma_lista  (linea 78, columna 7)</title><rect x="1258.4" y="4564.0" width="211.6" height="30" rx="8"/><text class="clase" x="1269.4" y="4583.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4583.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">suma_lista</text></g>
+<g class="nodo cat-Nombres"><title>Identificador mylist  (linea 78, columna 18), tipo [int]</title><rect x="1258.4" y="4606.0" width="243.2" height="30" rx="8"/><text class="clase" x="1269.4" y="4625.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4625.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">mylist</text><text class="tipodato" x="1435.3" y="4625.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [int]</text></g>
+<g class="nodo cat-Sentencias"><title>SentenciaExpr  (linea 79, columna 1)</title><rect x="209.2" y="4684.8" width="124.7" height="30" rx="8"/><text class="clase" x="220.2" y="4704.2" textLength="102.7" lengthAdjust="spacingAndGlyphs">SentenciaExpr</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 79, columna 1), tipo &lt;None&gt;</title><rect x="508.9" y="4684.8" width="148.4" height="30" rx="8"/><text class="clase" x="519.9" y="4704.2" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="583.1" y="4704.2" textLength="63.2" lengthAdjust="spacingAndGlyphs">: &lt;None&gt;</text></g>
+<g class="nodo cat-Nombres"><title>Identificador print  (linea 79, columna 1)</title><rect x="903.4" y="4648.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="4667.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4667.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">print</text></g>
+<g class="nodo cat-Expresiones"><title>Llamada  (linea 79, columna 7), tipo str</title><rect x="903.4" y="4721.5" width="124.7" height="30" rx="8"/><text class="clase" x="914.4" y="4741.0" textLength="55.3" lengthAdjust="spacingAndGlyphs">Llamada</text><text class="tipodato" x="977.6" y="4741.0" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Nombres"><title>Identificador concatena  (linea 79, columna 7)</title><rect x="1258.4" y="4690.0" width="203.7" height="30" rx="8"/><text class="clase" x="1269.4" y="4709.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="4709.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">concatena</text></g>
+<g class="nodo cat-Expresiones"><title>LitLista  (linea 79, columna 17), tipo [str]</title><rect x="1258.4" y="4753.0" width="148.4" height="30" rx="8"/><text class="clase" x="1269.4" y="4772.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitLista</text><text class="tipodato" x="1340.5" y="4772.5" textLength="55.3" lengthAdjust="spacingAndGlyphs">: [str]</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;Hola&quot;  (linea 79, columna 18), tipo str</title><rect x="1605.5" y="4732.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="4751.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1687.6" y="4751.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">&quot;Hola&quot;</text><text class="tipodato" x="1742.9" y="4751.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Literales"><title>LitTexto &quot;ChocoPy&quot;  (linea 79, columna 26), tipo str</title><rect x="1605.5" y="4774.0" width="211.6" height="30" rx="8"/><text class="clase" x="1616.5" y="4793.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">LitTexto</text><text class="valor" x="1687.6" y="4793.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">&quot;ChocoPy&quot;</text><text class="tipodato" x="1766.6" y="4793.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: str</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 81, columna 1)</title><rect x="209.2" y="4847.5" width="101.0" height="30" rx="8"/><text class="clase" x="220.2" y="4867.0" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado_id  (linea 81, columna 1), tipo bool</title><rect x="508.9" y="4816.0" width="282.7" height="30" rx="8"/><text class="clase" x="519.9" y="4835.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="630.5" y="4835.5" textLength="94.8" lengthAdjust="spacingAndGlyphs">resultado_id</text><text class="tipodato" x="733.2" y="4835.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria is  (linea 81, columna 16), tipo bool</title><rect x="508.9" y="4879.0" width="172.1" height="30" rx="8"/><text class="clase" x="519.9" y="4898.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="598.9" y="4898.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">is</text><text class="tipodato" x="622.6" y="4898.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador x  (linea 81, columna 16), tipo object</title><rect x="903.4" y="4858.0" width="211.6" height="30" rx="8"/><text class="clase" x="914.4" y="4877.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4877.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">x</text><text class="tipodato" x="1040.8" y="4877.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: object</text></g>
+<g class="nodo cat-Nombres"><title>Identificador y  (linea 81, columna 21), tipo object</title><rect x="903.4" y="4900.0" width="211.6" height="30" rx="8"/><text class="clase" x="914.4" y="4919.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1025.0" y="4919.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">y</text><text class="tipodato" x="1040.8" y="4919.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">: object</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 82, columna 1)</title><rect x="209.2" y="5047.7" width="101.0" height="30" rx="8"/><text class="clase" x="220.2" y="5067.2" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado_op  (linea 82, columna 1), tipo int</title><rect x="508.9" y="4942.0" width="274.8" height="30" rx="8"/><text class="clase" x="519.9" y="4961.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="630.5" y="4961.5" textLength="94.8" lengthAdjust="spacingAndGlyphs">resultado_op</text><text class="tipodato" x="733.2" y="4961.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria -  (linea 82, columna 16), tipo int</title><rect x="508.9" y="5153.3" width="156.3" height="30" rx="8"/><text class="clase" x="519.9" y="5172.8" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="598.9" y="5172.8" textLength="7.9" lengthAdjust="spacingAndGlyphs">-</text><text class="tipodato" x="614.7" y="5172.8" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria %  (linea 82, columna 16), tipo int</title><rect x="903.4" y="5112.6" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="5132.1" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="5132.1" textLength="7.9" lengthAdjust="spacingAndGlyphs">%</text><text class="tipodato" x="1009.2" y="5132.1" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria //  (linea 82, columna 16), tipo int</title><rect x="1258.4" y="5073.2" width="164.2" height="30" rx="8"/><text class="clase" x="1269.4" y="5092.8" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="5092.8" textLength="15.8" lengthAdjust="spacingAndGlyphs">//</text><text class="tipodato" x="1372.1" y="5092.8" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria *  (linea 82, columna 16), tipo int</title><rect x="1605.5" y="5036.5" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="5056.0" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1695.5" y="5056.0" textLength="7.9" lengthAdjust="spacingAndGlyphs">*</text><text class="tipodato" x="1711.3" y="5056.0" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria +  (linea 82, columna 17), tipo int</title><rect x="1936.8" y="5005.0" width="156.3" height="30" rx="8"/><text class="clase" x="1947.8" y="5024.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="2026.8" y="5024.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">+</text><text class="tipodato" x="2042.6" y="5024.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador a  (linea 82, columna 17), tipo int</title><rect x="2283.9" y="4984.0" width="187.9" height="30" rx="8"/><text class="clase" x="2294.9" y="5003.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2405.5" y="5003.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">a</text><text class="tipodato" x="2421.3" y="5003.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador b  (linea 82, columna 21), tipo int</title><rect x="2283.9" y="5026.0" width="187.9" height="30" rx="8"/><text class="clase" x="2294.9" y="5045.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2405.5" y="5045.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">b</text><text class="tipodato" x="2421.3" y="5045.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 2  (linea 82, columna 26), tipo int</title><rect x="1936.8" y="5068.0" width="156.3" height="30" rx="8"/><text class="clase" x="1947.8" y="5087.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="2026.8" y="5087.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">2</text><text class="tipodato" x="2042.6" y="5087.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 3  (linea 82, columna 31), tipo int</title><rect x="1605.5" y="5110.0" width="156.3" height="30" rx="8"/><text class="clase" x="1616.5" y="5129.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1695.5" y="5129.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">3</text><text class="tipodato" x="1711.3" y="5129.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 4  (linea 82, columna 35), tipo int</title><rect x="1258.4" y="5152.0" width="156.3" height="30" rx="8"/><text class="clase" x="1269.4" y="5171.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="1348.4" y="5171.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">4</text><text class="tipodato" x="1364.2" y="5171.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Literales"><title>LitEntero 1  (linea 82, columna 39), tipo int</title><rect x="903.4" y="5194.0" width="156.3" height="30" rx="8"/><text class="clase" x="914.4" y="5213.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">LitEntero</text><text class="valor" x="993.4" y="5213.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">1</text><text class="tipodato" x="1009.2" y="5213.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Sentencias"><title>Asignacion  (linea 83, columna 1)</title><rect x="209.2" y="5320.0" width="101.0" height="30" rx="8"/><text class="clase" x="220.2" y="5339.5" textLength="79.0" lengthAdjust="spacingAndGlyphs">Asignacion</text></g>
+<g class="nodo cat-Nombres"><title>Identificador resultado_bool  (linea 83, columna 1), tipo bool</title><rect x="508.9" y="5236.0" width="298.5" height="30" rx="8"/><text class="clase" x="519.9" y="5255.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="630.5" y="5255.5" textLength="110.6" lengthAdjust="spacingAndGlyphs">resultado_bool</text><text class="tipodato" x="749.0" y="5255.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria or  (linea 83, columna 18), tipo bool</title><rect x="508.9" y="5404.0" width="172.1" height="30" rx="8"/><text class="clase" x="519.9" y="5423.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="598.9" y="5423.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">or</text><text class="tipodato" x="622.6" y="5423.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria and  (linea 83, columna 18), tipo bool</title><rect x="903.4" y="5341.0" width="180.0" height="30" rx="8"/><text class="clase" x="914.4" y="5360.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="5360.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">and</text><text class="tipodato" x="1025.0" y="5360.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria &lt;  (linea 83, columna 19), tipo bool</title><rect x="1258.4" y="5299.0" width="164.2" height="30" rx="8"/><text class="clase" x="1269.4" y="5318.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1348.4" y="5318.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">&lt;</text><text class="tipodato" x="1364.2" y="5318.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador a  (linea 83, columna 19), tipo int</title><rect x="1605.5" y="5278.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="5297.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="5297.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">a</text><text class="tipodato" x="1742.9" y="5297.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador b  (linea 83, columna 23), tipo int</title><rect x="1605.5" y="5320.0" width="187.9" height="30" rx="8"/><text class="clase" x="1616.5" y="5339.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1727.1" y="5339.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">b</text><text class="tipodato" x="1742.9" y="5339.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpUnaria not  (linea 83, columna 31), tipo bool</title><rect x="1258.4" y="5383.0" width="172.1" height="30" rx="8"/><text class="clase" x="1269.4" y="5402.5" textLength="63.2" lengthAdjust="spacingAndGlyphs">OpUnaria</text><text class="valor" x="1340.5" y="5402.5" textLength="23.7" lengthAdjust="spacingAndGlyphs">not</text><text class="tipodato" x="1372.1" y="5402.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria ==  (linea 83, columna 36), tipo bool</title><rect x="1605.5" y="5383.0" width="172.1" height="30" rx="8"/><text class="clase" x="1616.5" y="5402.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="1695.5" y="5402.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">==</text><text class="tipodato" x="1719.2" y="5402.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador a  (linea 83, columna 36), tipo int</title><rect x="1936.8" y="5362.0" width="187.9" height="30" rx="8"/><text class="clase" x="1947.8" y="5381.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="5381.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">a</text><text class="tipodato" x="2074.2" y="5381.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador b  (linea 83, columna 41), tipo int</title><rect x="1936.8" y="5404.0" width="187.9" height="30" rx="8"/><text class="clase" x="1947.8" y="5423.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="2058.4" y="5423.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">b</text><text class="tipodato" x="2074.2" y="5423.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Expresiones"><title>OpBinaria !=  (linea 83, columna 49), tipo bool</title><rect x="903.4" y="5467.0" width="172.1" height="30" rx="8"/><text class="clase" x="914.4" y="5486.5" textLength="71.1" lengthAdjust="spacingAndGlyphs">OpBinaria</text><text class="valor" x="993.4" y="5486.5" textLength="15.8" lengthAdjust="spacingAndGlyphs">!=</text><text class="tipodato" x="1017.1" y="5486.5" textLength="47.4" lengthAdjust="spacingAndGlyphs">: bool</text></g>
+<g class="nodo cat-Nombres"><title>Identificador a  (linea 83, columna 49), tipo int</title><rect x="1258.4" y="5446.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="5465.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="5465.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">a</text><text class="tipodato" x="1395.8" y="5465.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+<g class="nodo cat-Nombres"><title>Identificador b  (linea 83, columna 54), tipo int</title><rect x="1258.4" y="5488.0" width="187.9" height="30" rx="8"/><text class="clase" x="1269.4" y="5507.5" textLength="102.7" lengthAdjust="spacingAndGlyphs">Identificador</text><text class="valor" x="1380.0" y="5507.5" textLength="7.9" lengthAdjust="spacingAndGlyphs">b</text><text class="tipodato" x="1395.8" y="5507.5" textLength="39.5" lengthAdjust="spacingAndGlyphs">: int</text></g>
+</g>
+</svg>
+<div class="ayuda">Rueda: zoom &middot; Arrastrar: mover &middot; Cursor sobre un nodo: l&iacute;nea y columna</div>
+</main>
+<script>
+(function () {
+  var svg = document.getElementById('arbol'), lienzo = document.getElementById('lienzo');
+  var AN = 2831, AL = 5546, vb = {x:0, y:0, w:AN, h:AL};
+  function aplicar() { svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h); }
+  function ajustar() {
+    var r = lienzo.getBoundingClientRect(), esc = Math.min(1, r.width / AN, r.height / AL);
+    vb = {x:0, y:0, w:r.width / esc, h:r.height / esc};
+    if (AN * esc < r.width) vb.x = -(vb.w - AN) / 2;
+    if (AL * esc < r.height) vb.y = -(vb.h - AL) / 2;
+    aplicar();
+  }
+  function zoom(f, cx, cy) {
+    var r = lienzo.getBoundingClientRect();
+    var px = vb.x + vb.w * (cx === undefined ? 0.5 : (cx - r.left) / r.width);
+    var py = vb.y + vb.h * (cy === undefined ? 0.5 : (cy - r.top) / r.height);
+    vb.w *= f; vb.h *= f;
+    vb.x = px - (px - vb.x) * f; vb.y = py - (py - vb.y) * f;
+    aplicar();
+  }
+  lienzo.addEventListener('wheel', function (e) { e.preventDefault(); zoom(e.deltaY < 0 ? 0.85 : 1 / 0.85, e.clientX, e.clientY); }, {passive:false});
+  var arr = null;
+  lienzo.addEventListener('mousedown', function (e) { arr = {x:e.clientX, y:e.clientY, vx:vb.x, vy:vb.y}; lienzo.classList.add('arrastrando'); });
+  window.addEventListener('mouseup', function () { arr = null; lienzo.classList.remove('arrastrando'); });
+  window.addEventListener('mousemove', function (e) {
+    if (!arr) return;
+    var r = lienzo.getBoundingClientRect();
+    vb.x = arr.vx - (e.clientX - arr.x) * vb.w / r.width;
+    vb.y = arr.vy - (e.clientY - arr.y) * vb.h / r.height;
+    aplicar();
+  });
+  document.getElementById('mas').onclick = function () { zoom(0.8); };
+  document.getElementById('menos').onclick = function () { zoom(1.25); };
+  document.getElementById('ajustar').onclick = ajustar;
+  window.addEventListener('resize', ajustar);
+  ajustar();
+})();
+</script>
+</body></html>

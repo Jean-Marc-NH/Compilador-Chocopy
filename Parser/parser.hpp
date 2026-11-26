@@ -7,10 +7,10 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "GeneradorLR1/conjuntos.hpp"
-#include "GeneradorLR1/gramatica.hpp"
-#include "GeneradorLR1/tabla.hpp"
-#include "Scanner/lexer.hpp"
+#include "../GeneradorLR1/conjuntos.hpp"
+#include "../GeneradorLR1/gramatica.hpp"
+#include "../GeneradorLR1/tabla.hpp"
+#include "../Scanner/lexer.hpp"
 #include "arbol.hpp"
 
 // Parser (analizador sintactico) LR(1) de ChocoPy.

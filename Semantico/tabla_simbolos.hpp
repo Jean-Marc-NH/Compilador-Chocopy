@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "Scanner/tokens.hpp"
+#include "../Scanner/tokens.hpp"
 #include "tipos.hpp"
 
 // Tabla de simbolos de ChocoPy: una tabla (Ambito) por cada scope, unidas por

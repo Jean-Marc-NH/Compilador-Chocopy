@@ -1,0 +1,400 @@
+{"archivo": "Pruebas/programas/Programa_valido.py", "ast":
+{"clase": "Programa", "texto": "", "linea": 7, "col": 1, "tipo": "", "hijos": [
+  {"rol": "def", "clase": "DefClase", "texto": "animal(object)", "linea": 7, "col": 1, "tipo": "", "hijos": [
+    {"rol": "miembro", "clase": "DefVariable", "texto": "", "linea": 8, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "makes_noise", "linea": 8, "col": 5, "tipo": "bool", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "bool", "linea": 8, "col": 18, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitBool", "texto": "False", "linea": 8, "col": 25, "tipo": "bool", "hijos": []}
+    ]},
+    {"rol": "miembro", "clase": "DefFuncion", "texto": "make_noise", "linea": 10, "col": 5, "tipo": "", "hijos": [
+      {"rol": "param", "clase": "VarTipada", "texto": "self", "linea": 10, "col": 20, "tipo": "animal", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "animal", "linea": 10, "col": 26, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "retorno", "clase": "Tipo", "texto": "object", "linea": 10, "col": 39, "tipo": "", "hijos": []},
+      {"rol": "cuerpo", "clase": "Si", "texto": "", "linea": 11, "col": 9, "tipo": "", "hijos": [
+        {"rol": "condicion", "clase": "Miembro", "texto": "makes_noise", "linea": 11, "col": 12, "tipo": "bool", "hijos": [
+          {"rol": "objeto", "clase": "Identificador", "texto": "self", "linea": 11, "col": 12, "tipo": "animal", "hijos": []}
+        ]},
+        {"rol": "entonces", "clase": "SentenciaExpr", "texto": "", "linea": 12, "col": 13, "tipo": "", "hijos": [
+          {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 12, "col": 13, "tipo": "<None>", "hijos": [
+            {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 12, "col": 13, "tipo": "", "hijos": []},
+            {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 12, "col": 19, "tipo": "str", "hijos": [
+              {"rol": "funcion", "clase": "Miembro", "texto": "sound", "linea": 12, "col": 19, "tipo": "", "hijos": [
+                {"rol": "objeto", "clase": "Identificador", "texto": "self", "linea": 12, "col": 19, "tipo": "animal", "hijos": []}
+              ]}
+            ]}
+          ]}
+        ]},
+        {"rol": "sino", "clase": "Pasar", "texto": "", "linea": 14, "col": 13, "tipo": "", "hijos": []}
+      ]}
+    ]},
+    {"rol": "miembro", "clase": "DefFuncion", "texto": "sound", "linea": 16, "col": 5, "tipo": "", "hijos": [
+      {"rol": "param", "clase": "VarTipada", "texto": "self", "linea": 16, "col": 15, "tipo": "animal", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "animal", "linea": 16, "col": 21, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "retorno", "clase": "Tipo", "texto": "str", "linea": 16, "col": 34, "tipo": "", "hijos": []},
+      {"rol": "cuerpo", "clase": "Retornar", "texto": "", "linea": 17, "col": 9, "tipo": "", "hijos": [
+        {"rol": "valor", "clase": "LitTexto", "texto": "\"???\"", "linea": 17, "col": 16, "tipo": "str", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefClase", "texto": "cow(animal)", "linea": 19, "col": 1, "tipo": "", "hijos": [
+    {"rol": "miembro", "clase": "DefFuncion", "texto": "__init__", "linea": 20, "col": 5, "tipo": "", "hijos": [
+      {"rol": "param", "clase": "VarTipada", "texto": "self", "linea": 20, "col": 18, "tipo": "cow", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "cow", "linea": 20, "col": 24, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "cuerpo", "clase": "Asignacion", "texto": "", "linea": 21, "col": 9, "tipo": "", "hijos": [
+        {"rol": "objetivo", "clase": "Miembro", "texto": "makes_noise", "linea": 21, "col": 9, "tipo": "bool", "hijos": [
+          {"rol": "objeto", "clase": "Identificador", "texto": "self", "linea": 21, "col": 9, "tipo": "cow", "hijos": []}
+        ]},
+        {"rol": "valor", "clase": "LitBool", "texto": "True", "linea": 21, "col": 28, "tipo": "bool", "hijos": []}
+      ]}
+    ]},
+    {"rol": "miembro", "clase": "DefFuncion", "texto": "sound", "linea": 23, "col": 5, "tipo": "", "hijos": [
+      {"rol": "param", "clase": "VarTipada", "texto": "self", "linea": 23, "col": 15, "tipo": "cow", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "cow", "linea": 23, "col": 21, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "retorno", "clase": "Tipo", "texto": "str", "linea": 23, "col": 31, "tipo": "", "hijos": []},
+      {"rol": "cuerpo", "clase": "Retornar", "texto": "", "linea": 24, "col": 9, "tipo": "", "hijos": [
+        {"rol": "valor", "clase": "LitTexto", "texto": "\"moo\"", "linea": 24, "col": 16, "tipo": "str", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefFuncion", "texto": "is_zero", "linea": 26, "col": 1, "tipo": "", "hijos": [
+    {"rol": "param", "clase": "VarTipada", "texto": "items", "linea": 26, "col": 13, "tipo": "[int]", "hijos": [
+      {"rol": "tipo", "clase": "TipoLista", "texto": "", "linea": 26, "col": 20, "tipo": "", "hijos": [
+        {"rol": "elem", "clase": "Tipo", "texto": "int", "linea": 26, "col": 21, "tipo": "", "hijos": []}
+      ]}
+    ]},
+    {"rol": "param", "clase": "VarTipada", "texto": "idx", "linea": 26, "col": 27, "tipo": "int", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 26, "col": 32, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "retorno", "clase": "Tipo", "texto": "bool", "linea": 26, "col": 40, "tipo": "", "hijos": []},
+    {"rol": "decl", "clase": "DefVariable", "texto": "", "linea": 27, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "val", "linea": 27, "col": 5, "tipo": "int", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 27, "col": 10, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitEntero", "texto": "0", "linea": 27, "col": 16, "tipo": "int", "hijos": []}
+    ]},
+    {"rol": "cuerpo", "clase": "Asignacion", "texto": "", "linea": 28, "col": 5, "tipo": "", "hijos": [
+      {"rol": "objetivo", "clase": "Identificador", "texto": "val", "linea": 28, "col": 5, "tipo": "int", "hijos": []},
+      {"rol": "valor", "clase": "Indice", "texto": "", "linea": 28, "col": 11, "tipo": "int", "hijos": [
+        {"rol": "objeto", "clase": "Identificador", "texto": "items", "linea": 28, "col": 11, "tipo": "[int]", "hijos": []},
+        {"rol": "indice", "clase": "Identificador", "texto": "idx", "linea": 28, "col": 17, "tipo": "int", "hijos": []}
+      ]}
+    ]},
+    {"rol": "cuerpo", "clase": "Retornar", "texto": "", "linea": 29, "col": 5, "tipo": "", "hijos": [
+      {"rol": "valor", "clase": "OpBinaria", "texto": "==", "linea": 29, "col": 12, "tipo": "bool", "hijos": [
+        {"rol": "izq", "clase": "Identificador", "texto": "val", "linea": 29, "col": 12, "tipo": "int", "hijos": []},
+        {"rol": "der", "clase": "LitEntero", "texto": "0", "linea": 29, "col": 19, "tipo": "int", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefFuncion", "texto": "clasifica", "linea": 31, "col": 1, "tipo": "", "hijos": [
+    {"rol": "param", "clase": "VarTipada", "texto": "n", "linea": 31, "col": 15, "tipo": "int", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 31, "col": 18, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "retorno", "clase": "Tipo", "texto": "str", "linea": 31, "col": 26, "tipo": "", "hijos": []},
+    {"rol": "cuerpo", "clase": "Si", "texto": "", "linea": 32, "col": 5, "tipo": "", "hijos": [
+      {"rol": "condicion", "clase": "OpBinaria", "texto": "<", "linea": 32, "col": 8, "tipo": "bool", "hijos": [
+        {"rol": "izq", "clase": "Identificador", "texto": "n", "linea": 32, "col": 8, "tipo": "int", "hijos": []},
+        {"rol": "der", "clase": "LitEntero", "texto": "0", "linea": 32, "col": 12, "tipo": "int", "hijos": []}
+      ]},
+      {"rol": "entonces", "clase": "Retornar", "texto": "", "linea": 33, "col": 9, "tipo": "", "hijos": [
+        {"rol": "valor", "clase": "LitTexto", "texto": "\"negativo\"", "linea": 33, "col": 16, "tipo": "str", "hijos": []}
+      ]},
+      {"rol": "sino", "clase": "Si", "texto": "", "linea": 34, "col": 5, "tipo": "", "hijos": [
+        {"rol": "condicion", "clase": "OpBinaria", "texto": "==", "linea": 34, "col": 10, "tipo": "bool", "hijos": [
+          {"rol": "izq", "clase": "Identificador", "texto": "n", "linea": 34, "col": 10, "tipo": "int", "hijos": []},
+          {"rol": "der", "clase": "LitEntero", "texto": "0", "linea": 34, "col": 15, "tipo": "int", "hijos": []}
+        ]},
+        {"rol": "entonces", "clase": "Retornar", "texto": "", "linea": 35, "col": 9, "tipo": "", "hijos": [
+          {"rol": "valor", "clase": "LitTexto", "texto": "\"cero\"", "linea": 35, "col": 16, "tipo": "str", "hijos": []}
+        ]},
+        {"rol": "sino", "clase": "Si", "texto": "", "linea": 36, "col": 5, "tipo": "", "hijos": [
+          {"rol": "condicion", "clase": "OpBinaria", "texto": "<=", "linea": 36, "col": 10, "tipo": "bool", "hijos": [
+            {"rol": "izq", "clase": "Identificador", "texto": "n", "linea": 36, "col": 10, "tipo": "int", "hijos": []},
+            {"rol": "der", "clase": "LitEntero", "texto": "9", "linea": 36, "col": 15, "tipo": "int", "hijos": []}
+          ]},
+          {"rol": "entonces", "clase": "Retornar", "texto": "", "linea": 37, "col": 9, "tipo": "", "hijos": [
+            {"rol": "valor", "clase": "LitTexto", "texto": "\"digito\"", "linea": 37, "col": 16, "tipo": "str", "hijos": []}
+          ]},
+          {"rol": "sino", "clase": "Retornar", "texto": "", "linea": 39, "col": 9, "tipo": "", "hijos": [
+            {"rol": "valor", "clase": "LitTexto", "texto": "\"grande\"", "linea": 39, "col": 16, "tipo": "str", "hijos": []}
+          ]}
+        ]}
+      ]}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefFuncion", "texto": "suma_lista", "linea": 41, "col": 1, "tipo": "", "hijos": [
+    {"rol": "param", "clase": "VarTipada", "texto": "nums", "linea": 41, "col": 16, "tipo": "[int]", "hijos": [
+      {"rol": "tipo", "clase": "TipoLista", "texto": "", "linea": 41, "col": 22, "tipo": "", "hijos": [
+        {"rol": "elem", "clase": "Tipo", "texto": "int", "linea": 41, "col": 23, "tipo": "", "hijos": []}
+      ]}
+    ]},
+    {"rol": "retorno", "clase": "Tipo", "texto": "int", "linea": 41, "col": 32, "tipo": "", "hijos": []},
+    {"rol": "decl", "clase": "DefVariable", "texto": "", "linea": 42, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "total", "linea": 42, "col": 5, "tipo": "int", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 42, "col": 12, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitEntero", "texto": "0", "linea": 42, "col": 18, "tipo": "int", "hijos": []}
+    ]},
+    {"rol": "decl", "clase": "DefVariable", "texto": "", "linea": 43, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "i", "linea": 43, "col": 5, "tipo": "int", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 43, "col": 8, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitEntero", "texto": "0", "linea": 43, "col": 14, "tipo": "int", "hijos": []}
+    ]},
+    {"rol": "cuerpo", "clase": "Mientras", "texto": "", "linea": 44, "col": 5, "tipo": "", "hijos": [
+      {"rol": "condicion", "clase": "OpBinaria", "texto": "<", "linea": 44, "col": 11, "tipo": "bool", "hijos": [
+        {"rol": "izq", "clase": "Identificador", "texto": "i", "linea": 44, "col": 11, "tipo": "int", "hijos": []},
+        {"rol": "der", "clase": "Llamada", "texto": "", "linea": 44, "col": 15, "tipo": "int", "hijos": [
+          {"rol": "funcion", "clase": "Identificador", "texto": "len", "linea": 44, "col": 15, "tipo": "", "hijos": []},
+          {"rol": "arg", "clase": "Identificador", "texto": "nums", "linea": 44, "col": 19, "tipo": "[int]", "hijos": []}
+        ]}
+      ]},
+      {"rol": "cuerpo", "clase": "Asignacion", "texto": "", "linea": 45, "col": 9, "tipo": "", "hijos": [
+        {"rol": "objetivo", "clase": "Identificador", "texto": "total", "linea": 45, "col": 9, "tipo": "int", "hijos": []},
+        {"rol": "valor", "clase": "OpBinaria", "texto": "+", "linea": 45, "col": 17, "tipo": "int", "hijos": [
+          {"rol": "izq", "clase": "Identificador", "texto": "total", "linea": 45, "col": 17, "tipo": "int", "hijos": []},
+          {"rol": "der", "clase": "Indice", "texto": "", "linea": 45, "col": 25, "tipo": "int", "hijos": [
+            {"rol": "objeto", "clase": "Identificador", "texto": "nums", "linea": 45, "col": 25, "tipo": "[int]", "hijos": []},
+            {"rol": "indice", "clase": "Identificador", "texto": "i", "linea": 45, "col": 30, "tipo": "int", "hijos": []}
+          ]}
+        ]}
+      ]},
+      {"rol": "cuerpo", "clase": "Asignacion", "texto": "", "linea": 46, "col": 9, "tipo": "", "hijos": [
+        {"rol": "objetivo", "clase": "Identificador", "texto": "i", "linea": 46, "col": 9, "tipo": "int", "hijos": []},
+        {"rol": "valor", "clase": "OpBinaria", "texto": "+", "linea": 46, "col": 13, "tipo": "int", "hijos": [
+          {"rol": "izq", "clase": "Identificador", "texto": "i", "linea": 46, "col": 13, "tipo": "int", "hijos": []},
+          {"rol": "der", "clase": "LitEntero", "texto": "1", "linea": 46, "col": 17, "tipo": "int", "hijos": []}
+        ]}
+      ]}
+    ]},
+    {"rol": "cuerpo", "clase": "Retornar", "texto": "", "linea": 47, "col": 5, "tipo": "", "hijos": [
+      {"rol": "valor", "clase": "Identificador", "texto": "total", "linea": 47, "col": 12, "tipo": "int", "hijos": []}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefFuncion", "texto": "concatena", "linea": 49, "col": 1, "tipo": "", "hijos": [
+    {"rol": "param", "clase": "VarTipada", "texto": "palabras", "linea": 49, "col": 15, "tipo": "[str]", "hijos": [
+      {"rol": "tipo", "clase": "TipoLista", "texto": "", "linea": 49, "col": 25, "tipo": "", "hijos": [
+        {"rol": "elem", "clase": "Tipo", "texto": "str", "linea": 49, "col": 26, "tipo": "", "hijos": []}
+      ]}
+    ]},
+    {"rol": "retorno", "clase": "Tipo", "texto": "str", "linea": 49, "col": 35, "tipo": "", "hijos": []},
+    {"rol": "decl", "clase": "DefVariable", "texto": "", "linea": 50, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "resultado", "linea": 50, "col": 5, "tipo": "str", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "str", "linea": 50, "col": 16, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitTexto", "texto": "\"\"", "linea": 50, "col": 22, "tipo": "str", "hijos": []}
+    ]},
+    {"rol": "decl", "clase": "DefVariable", "texto": "", "linea": 51, "col": 5, "tipo": "", "hijos": [
+      {"rol": "var", "clase": "VarTipada", "texto": "palabra", "linea": 51, "col": 5, "tipo": "str", "hijos": [
+        {"rol": "tipo", "clase": "Tipo", "texto": "str", "linea": 51, "col": 14, "tipo": "", "hijos": []}
+      ]},
+      {"rol": "valor", "clase": "LitTexto", "texto": "\"\"", "linea": 51, "col": 20, "tipo": "str", "hijos": []}
+    ]},
+    {"rol": "cuerpo", "clase": "Para", "texto": "palabra", "linea": 52, "col": 5, "tipo": "", "hijos": [
+      {"rol": "iterable", "clase": "Identificador", "texto": "palabras", "linea": 52, "col": 20, "tipo": "[str]", "hijos": []},
+      {"rol": "cuerpo", "clase": "Asignacion", "texto": "", "linea": 53, "col": 9, "tipo": "", "hijos": [
+        {"rol": "objetivo", "clase": "Identificador", "texto": "resultado", "linea": 53, "col": 9, "tipo": "str", "hijos": []},
+        {"rol": "valor", "clase": "OpBinaria", "texto": "+", "linea": 53, "col": 21, "tipo": "str", "hijos": [
+          {"rol": "izq", "clase": "OpBinaria", "texto": "+", "linea": 53, "col": 21, "tipo": "str", "hijos": [
+            {"rol": "izq", "clase": "Identificador", "texto": "resultado", "linea": 53, "col": 21, "tipo": "str", "hijos": []},
+            {"rol": "der", "clase": "Identificador", "texto": "palabra", "linea": 53, "col": 33, "tipo": "str", "hijos": []}
+          ]},
+          {"rol": "der", "clase": "LitTexto", "texto": "\" \"", "linea": 53, "col": 43, "tipo": "str", "hijos": []}
+        ]}
+      ]}
+    ]},
+    {"rol": "cuerpo", "clase": "Retornar", "texto": "", "linea": 54, "col": 5, "tipo": "", "hijos": [
+      {"rol": "valor", "clase": "Identificador", "texto": "resultado", "linea": 54, "col": 12, "tipo": "str", "hijos": []}
+    ]}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 60, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "mylist", "linea": 60, "col": 1, "tipo": "[int]", "hijos": [
+      {"rol": "tipo", "clase": "TipoLista", "texto": "", "linea": 60, "col": 9, "tipo": "", "hijos": [
+        {"rol": "elem", "clase": "Tipo", "texto": "int", "linea": 60, "col": 10, "tipo": "", "hijos": []}
+      ]}
+    ]},
+    {"rol": "valor", "clase": "LitNone", "texto": "None", "linea": 60, "col": 17, "tipo": "<None>", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 61, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "c", "linea": 61, "col": 1, "tipo": "animal", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "animal", "linea": 61, "col": 4, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitNone", "texto": "None", "linea": 61, "col": 13, "tipo": "<None>", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 62, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "nombre", "linea": 62, "col": 1, "tipo": "str", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "str", "linea": 62, "col": 9, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitTexto", "texto": "\"He\"llo\"\tWorld\n\"", "linea": 62, "col": 15, "tipo": "str", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 63, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "x", "linea": 63, "col": 1, "tipo": "object", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "object", "linea": 63, "col": 4, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitNone", "texto": "None", "linea": 63, "col": 13, "tipo": "<None>", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 64, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "y", "linea": 64, "col": 1, "tipo": "object", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "object", "linea": 64, "col": 4, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitNone", "texto": "None", "linea": 64, "col": 13, "tipo": "<None>", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 65, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "resultado_id", "linea": 65, "col": 1, "tipo": "bool", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "bool", "linea": 65, "col": 15, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitBool", "texto": "False", "linea": 65, "col": 22, "tipo": "bool", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 66, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "a", "linea": 66, "col": 1, "tipo": "int", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 66, "col": 4, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitEntero", "texto": "1", "linea": 66, "col": 10, "tipo": "int", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 67, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "b", "linea": 67, "col": 1, "tipo": "int", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 67, "col": 4, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitEntero", "texto": "2", "linea": 67, "col": 10, "tipo": "int", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 68, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "resultado_op", "linea": 68, "col": 1, "tipo": "int", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "int", "linea": 68, "col": 15, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitEntero", "texto": "0", "linea": 68, "col": 21, "tipo": "int", "hijos": []}
+  ]},
+  {"rol": "def", "clase": "DefVariable", "texto": "", "linea": 69, "col": 1, "tipo": "", "hijos": [
+    {"rol": "var", "clase": "VarTipada", "texto": "resultado_bool", "linea": 69, "col": 1, "tipo": "bool", "hijos": [
+      {"rol": "tipo", "clase": "Tipo", "texto": "bool", "linea": 69, "col": 17, "tipo": "", "hijos": []}
+    ]},
+    {"rol": "valor", "clase": "LitBool", "texto": "False", "linea": 69, "col": 24, "tipo": "bool", "hijos": []}
+  ]},
+  {"rol": "sentencia", "clase": "Asignacion", "texto": "", "linea": 71, "col": 1, "tipo": "", "hijos": [
+    {"rol": "objetivo", "clase": "Identificador", "texto": "mylist", "linea": 71, "col": 1, "tipo": "[int]", "hijos": []},
+    {"rol": "valor", "clase": "LitLista", "texto": "", "linea": 71, "col": 10, "tipo": "[int]", "hijos": [
+      {"rol": "elem", "clase": "LitEntero", "texto": "1", "linea": 71, "col": 11, "tipo": "int", "hijos": []},
+      {"rol": "elem", "clase": "LitEntero", "texto": "0", "linea": 71, "col": 14, "tipo": "int", "hijos": []},
+      {"rol": "elem", "clase": "OpUnaria", "texto": "-", "linea": 71, "col": 17, "tipo": "int", "hijos": [
+        {"rol": "operando", "clase": "LitEntero", "texto": "3", "linea": 71, "col": 18, "tipo": "int", "hijos": []}
+      ]},
+      {"rol": "elem", "clase": "LitEntero", "texto": "42", "linea": 71, "col": 21, "tipo": "int", "hijos": []},
+      {"rol": "elem", "clase": "LitEntero", "texto": "2147483647", "linea": 71, "col": 25, "tipo": "int", "hijos": []}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "Asignacion", "texto": "", "linea": 72, "col": 1, "tipo": "", "hijos": [
+    {"rol": "objetivo", "clase": "Identificador", "texto": "c", "linea": 72, "col": 1, "tipo": "animal", "hijos": []},
+    {"rol": "valor", "clase": "Llamada", "texto": "", "linea": 72, "col": 5, "tipo": "cow", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "cow", "linea": 72, "col": 5, "tipo": "", "hijos": []}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 73, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 73, "col": 1, "tipo": "object", "hijos": [
+      {"rol": "funcion", "clase": "Miembro", "texto": "make_noise", "linea": 73, "col": 1, "tipo": "", "hijos": [
+        {"rol": "objeto", "clase": "Identificador", "texto": "c", "linea": 73, "col": 1, "tipo": "animal", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 75, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 75, "col": 1, "tipo": "<None>", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 75, "col": 1, "tipo": "", "hijos": []},
+      {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 75, "col": 7, "tipo": "bool", "hijos": [
+        {"rol": "funcion", "clase": "Identificador", "texto": "is_zero", "linea": 75, "col": 7, "tipo": "", "hijos": []},
+        {"rol": "arg", "clase": "Identificador", "texto": "mylist", "linea": 75, "col": 15, "tipo": "[int]", "hijos": []},
+        {"rol": "arg", "clase": "LitEntero", "texto": "1", "linea": 75, "col": 23, "tipo": "int", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 76, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 76, "col": 1, "tipo": "<None>", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 76, "col": 1, "tipo": "", "hijos": []},
+      {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 76, "col": 7, "tipo": "str", "hijos": [
+        {"rol": "funcion", "clase": "Identificador", "texto": "clasifica", "linea": 76, "col": 7, "tipo": "", "hijos": []},
+        {"rol": "arg", "clase": "OpUnaria", "texto": "-", "linea": 76, "col": 17, "tipo": "int", "hijos": [
+          {"rol": "operando", "clase": "LitEntero", "texto": "5", "linea": 76, "col": 18, "tipo": "int", "hijos": []}
+        ]}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 77, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 77, "col": 1, "tipo": "<None>", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 77, "col": 1, "tipo": "", "hijos": []},
+      {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 77, "col": 7, "tipo": "str", "hijos": [
+        {"rol": "funcion", "clase": "Identificador", "texto": "clasifica", "linea": 77, "col": 7, "tipo": "", "hijos": []},
+        {"rol": "arg", "clase": "LitEntero", "texto": "0", "linea": 77, "col": 17, "tipo": "int", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 78, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 78, "col": 1, "tipo": "<None>", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 78, "col": 1, "tipo": "", "hijos": []},
+      {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 78, "col": 7, "tipo": "int", "hijos": [
+        {"rol": "funcion", "clase": "Identificador", "texto": "suma_lista", "linea": 78, "col": 7, "tipo": "", "hijos": []},
+        {"rol": "arg", "clase": "Identificador", "texto": "mylist", "linea": 78, "col": 18, "tipo": "[int]", "hijos": []}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "SentenciaExpr", "texto": "", "linea": 79, "col": 1, "tipo": "", "hijos": [
+    {"rol": "expr", "clase": "Llamada", "texto": "", "linea": 79, "col": 1, "tipo": "<None>", "hijos": [
+      {"rol": "funcion", "clase": "Identificador", "texto": "print", "linea": 79, "col": 1, "tipo": "", "hijos": []},
+      {"rol": "arg", "clase": "Llamada", "texto": "", "linea": 79, "col": 7, "tipo": "str", "hijos": [
+        {"rol": "funcion", "clase": "Identificador", "texto": "concatena", "linea": 79, "col": 7, "tipo": "", "hijos": []},
+        {"rol": "arg", "clase": "LitLista", "texto": "", "linea": 79, "col": 17, "tipo": "[str]", "hijos": [
+          {"rol": "elem", "clase": "LitTexto", "texto": "\"Hola\"", "linea": 79, "col": 18, "tipo": "str", "hijos": []},
+          {"rol": "elem", "clase": "LitTexto", "texto": "\"ChocoPy\"", "linea": 79, "col": 26, "tipo": "str", "hijos": []}
+        ]}
+      ]}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "Asignacion", "texto": "", "linea": 81, "col": 1, "tipo": "", "hijos": [
+    {"rol": "objetivo", "clase": "Identificador", "texto": "resultado_id", "linea": 81, "col": 1, "tipo": "bool", "hijos": []},
+    {"rol": "valor", "clase": "OpBinaria", "texto": "is", "linea": 81, "col": 16, "tipo": "bool", "hijos": [
+      {"rol": "izq", "clase": "Identificador", "texto": "x", "linea": 81, "col": 16, "tipo": "object", "hijos": []},
+      {"rol": "der", "clase": "Identificador", "texto": "y", "linea": 81, "col": 21, "tipo": "object", "hijos": []}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "Asignacion", "texto": "", "linea": 82, "col": 1, "tipo": "", "hijos": [
+    {"rol": "objetivo", "clase": "Identificador", "texto": "resultado_op", "linea": 82, "col": 1, "tipo": "int", "hijos": []},
+    {"rol": "valor", "clase": "OpBinaria", "texto": "-", "linea": 82, "col": 16, "tipo": "int", "hijos": [
+      {"rol": "izq", "clase": "OpBinaria", "texto": "%", "linea": 82, "col": 16, "tipo": "int", "hijos": [
+        {"rol": "izq", "clase": "OpBinaria", "texto": "//", "linea": 82, "col": 16, "tipo": "int", "hijos": [
+          {"rol": "izq", "clase": "OpBinaria", "texto": "*", "linea": 82, "col": 16, "tipo": "int", "hijos": [
+            {"rol": "izq", "clase": "OpBinaria", "texto": "+", "linea": 82, "col": 17, "tipo": "int", "hijos": [
+              {"rol": "izq", "clase": "Identificador", "texto": "a", "linea": 82, "col": 17, "tipo": "int", "hijos": []},
+              {"rol": "der", "clase": "Identificador", "texto": "b", "linea": 82, "col": 21, "tipo": "int", "hijos": []}
+            ]},
+            {"rol": "der", "clase": "LitEntero", "texto": "2", "linea": 82, "col": 26, "tipo": "int", "hijos": []}
+          ]},
+          {"rol": "der", "clase": "LitEntero", "texto": "3", "linea": 82, "col": 31, "tipo": "int", "hijos": []}
+        ]},
+        {"rol": "der", "clase": "LitEntero", "texto": "4", "linea": 82, "col": 35, "tipo": "int", "hijos": []}
+      ]},
+      {"rol": "der", "clase": "LitEntero", "texto": "1", "linea": 82, "col": 39, "tipo": "int", "hijos": []}
+    ]}
+  ]},
+  {"rol": "sentencia", "clase": "Asignacion", "texto": "", "linea": 83, "col": 1, "tipo": "", "hijos": [
+    {"rol": "objetivo", "clase": "Identificador", "texto": "resultado_bool", "linea": 83, "col": 1, "tipo": "bool", "hijos": []},
+    {"rol": "valor", "clase": "OpBinaria", "texto": "or", "linea": 83, "col": 18, "tipo": "bool", "hijos": [
+      {"rol": "izq", "clase": "OpBinaria", "texto": "and", "linea": 83, "col": 18, "tipo": "bool", "hijos": [
+        {"rol": "izq", "clase": "OpBinaria", "texto": "<", "linea": 83, "col": 19, "tipo": "bool", "hijos": [
+          {"rol": "izq", "clase": "Identificador", "texto": "a", "linea": 83, "col": 19, "tipo": "int", "hijos": []},
+          {"rol": "der", "clase": "Identificador", "texto": "b", "linea": 83, "col": 23, "tipo": "int", "hijos": []}
+        ]},
+        {"rol": "der", "clase": "OpUnaria", "texto": "not", "linea": 83, "col": 31, "tipo": "bool", "hijos": [
+          {"rol": "operando", "clase": "OpBinaria", "texto": "==", "linea": 83, "col": 36, "tipo": "bool", "hijos": [
+            {"rol": "izq", "clase": "Identificador", "texto": "a", "linea": 83, "col": 36, "tipo": "int", "hijos": []},
+            {"rol": "der", "clase": "Identificador", "texto": "b", "linea": 83, "col": 41, "tipo": "int", "hijos": []}
+          ]}
+        ]}
+      ]},
+      {"rol": "der", "clase": "OpBinaria", "texto": "!=", "linea": 83, "col": 49, "tipo": "bool", "hijos": [
+        {"rol": "izq", "clase": "Identificador", "texto": "a", "linea": 83, "col": 49, "tipo": "int", "hijos": []},
+        {"rol": "der", "clase": "Identificador", "texto": "b", "linea": 83, "col": 54, "tipo": "int", "hijos": []}
+      ]}
+    ]}
+  ]}
+]}}

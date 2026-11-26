@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "AST/nodos.hpp"
+#include "../AST/nodos.hpp"
 #include "tabla_simbolos.hpp"
 #include "tipos.hpp"
 

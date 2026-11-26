@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "Comun/diagnostico.hpp"
+#include "../Comun/diagnostico.hpp"
 
 namespace {
 

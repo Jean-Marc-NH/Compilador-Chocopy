@@ -36,12 +36,12 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "AST/constructor.hpp"
-#include "AST/impresion.hpp"
-#include "GeneradorLR1/cache.hpp"
-#include "Parser/parser.hpp"
-#include "Scanner/lexer.hpp"
-#include "Semantico/analizador.hpp"
+#include "../AST/constructor.hpp"
+#include "../AST/impresion.hpp"
+#include "../GeneradorLR1/cache.hpp"
+#include "../Parser/parser.hpp"
+#include "../Scanner/lexer.hpp"
+#include "../Semantico/analizador.hpp"
 
 namespace {
 

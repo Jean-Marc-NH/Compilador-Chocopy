@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "Scanner/tokens.hpp"
+#include "../Scanner/tokens.hpp"
 
 // Nodo del arbol de derivacion (parse tree) que arma el parser mientras hace
 // shift/reduce. Es generico: no sabe nada de ChocoPy, solo recuerda que
