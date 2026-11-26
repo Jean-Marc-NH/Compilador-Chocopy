@@ -147,24 +147,7 @@ void AnalizadorSemantico::registrarClase(const DefClase& clase) {
     jerarquia.agregar(clase.nombre, superclase);
 }
 
-// Inserta 'simbolo' en la tabla actual. Reporta (y devuelve false) si el
-// nombre es el de una clase o si ya estaba declarado en este mismo scope.
-bool AnalizadorSemantico::declarar(const Simbolo& simbolo, const Nodo& donde) {
-    if (simbolo.categoria != TipoSimbolo::Clase && jerarquia.existe(simbolo.nombre)) {
-        error(donde, comillas(simbolo.nombre) + " es el nombre de una clase y no se puede usar como " +
-                         tipoSimboloATexto(simbolo.categoria));
-        return false;
-    }
-    if (Simbolo* previo = actual->buscarLocal(simbolo.nombre)) {
-        error(donde, comillas(simbolo.nombre) + " ya fue declarado en este ambito (" + actual->nombre() + ")");
-        if (!previo->predefinido)
-            nota(previo->pos, static_cast<int>(simbolo.nombre.size()),
-                 "declaracion anterior de " + comillas(simbolo.nombre));
-        return false;
-    }
-    actual->insertar(simbolo);
-    return true;
-}
+
 
 // Tipo escrito en una anotacion (nodo Tipo): "int", "animal", "[[str]]".
 TipoValor AnalizadorSemantico::tipoAnotado(const Nodo* anotacion, bool reportar) {
@@ -318,6 +301,7 @@ void AnalizadorSemantico::revisarFuncion(DefFuncion& funcion, const std::string&
     Ambito* anterior = actual;
     const bool estabaEnFuncion = dentroDeFuncion;
     const TipoValor retornoAnterior = retornoActual;
+    //crear hijo crea una tabla por cada scope
     actual = &actual->crearHijo(nombreTabla, TipoAmbito::Funcion);
 
     for (std::size_t i = 0; i < funcion.parametros.size(); ++i) {
@@ -387,12 +371,167 @@ void AnalizadorSemantico::revisarBloque(ListaNodos& sentencias) {
     for (auto& sentencia : sentencias) revisarSentencia(*sentencia);
 }
 
-void AnalizadorSemantico::revisarCondicion(Nodo& condicion, const char* sentencia) {
-    TipoValor tipo = tipoDe(condicion);
-    if (tipo != tipos::BOOL && tipo != tipos::ERROR)
-        error(condicion, std::string("la condicion del '") + sentencia + "' debe ser de tipo 'bool', no " +
-                             comillas(tipo));
+//checkeo 1
+TipoValor AnalizadorSemantico::calcularTipo(Nodo& expresion) {
+    if (dynamic_cast<LitEntero*>(&expresion)) return tipos::INT;
+    if (dynamic_cast<LitBool*>(&expresion)) return tipos::BOOL;
+    if (dynamic_cast<LitTexto*>(&expresion)) return tipos::STR;
+    if (dynamic_cast<LitNone*>(&expresion)) return tipos::NONE;
+
+    if (auto* id = dynamic_cast<Identificador*>(&expresion)) {
+        //checkeo semantico 1 - variable no declarada
+        Simbolo* simbolo = actual->buscar(id->nombre);
+        if (!simbolo) {
+            error(*id, comillas(id->nombre) + " no esta declarado");
+            return tipos::ERROR;
+        }
+        if (simbolo->categoria == TipoSimbolo::Funcion) {
+            error(*id, comillas(id->nombre) + " es una funcion: para usarla hay que llamarla, " + id->nombre + "(...)");
+            return tipos::ERROR;
+        }
+        if (simbolo->categoria == TipoSimbolo::Clase) {
+            error(*id, comillas(id->nombre) + " es una clase, no un valor: para crear un objeto escribe " +
+                           id->nombre + "()");
+            return tipos::ERROR;
+        }
+        return simbolo->tipo;
+    }
+
+    if (auto* lista = dynamic_cast<LitLista*>(&expresion)) {
+        if (lista->elementos.empty()) return tipos::EMPTY;
+        TipoValor elemento = tipoDe(*lista->elementos[0]);
+        for (std::size_t i = 1; i < lista->elementos.size(); ++i)
+            elemento = jerarquia.unir(elemento, tipoDe(*lista->elementos[i]));
+        return tipos::listaDe(elemento);
+    }
+
+    if (auto* unaria = dynamic_cast<OpUnaria*>(&expresion)) {
+        TipoValor operando = tipoDe(*unaria->operando);
+        const TipoValor esperado = unaria->operador == "not" ? tipos::BOOL : tipos::INT;
+        if (operando != esperado && operando != tipos::ERROR)
+            error(*unaria, "el operador " + comillas(unaria->operador) + " necesita un valor de tipo " +
+                               comillas(esperado) + ", no " + comillas(operando));
+        return esperado;
+    }
+
+    if (auto* binaria = dynamic_cast<OpBinaria*>(&expresion)) return tipoOpBinaria(*binaria);
+
+    if (auto* si = dynamic_cast<ExprSi*>(&expresion)) {
+        TipoValor entonces = tipoDe(*si->entonces);
+        revisarCondicion(*si->condicion, "if");
+        TipoValor sino = tipoDe(*si->sino);
+        return jerarquia.unir(entonces, sino);
+    }
+
+    if (auto* indice = dynamic_cast<Indice*>(&expresion)) {
+        TipoValor objeto = tipoDe(*indice->objeto);
+        TipoValor posicion = tipoDe(*indice->indice);
+        if (posicion != tipos::INT && posicion != tipos::ERROR)
+            error(*indice->indice, "el indice debe ser de tipo 'int', no " + comillas(posicion));
+        if (objeto == tipos::ERROR) return tipos::ERROR;
+        if (objeto == tipos::STR) return tipos::STR;
+        if (tipos::esLista(objeto)) return tipos::elementoDe(objeto);
+        error(*indice, "no se puede usar [] sobre un valor de tipo " + comillas(objeto));
+        return tipos::ERROR;
+    }
+
+    if (auto* miembro = dynamic_cast<Miembro*>(&expresion)) {
+        TipoValor objeto = tipoDe(*miembro->objeto);
+        const InfoClase* info = tipos::esLista(objeto) ? nullptr : jerarquia.buscar(objeto);
+        if (objeto == tipos::ERROR) return tipos::ERROR;
+        if (info && info->atributos.count(miembro->nombre)) return info->atributos.at(miembro->nombre);
+        if (info && info->metodos.count(miembro->nombre))
+            error(*miembro, comillas(miembro->nombre) + " es un metodo: para usarlo hay que llamarlo");
+        else
+            error(*miembro, "el tipo " + comillas(objeto) + " no tiene el atributo " + comillas(miembro->nombre));
+        return tipos::ERROR;
+    }
+
+    if (auto* llamada = dynamic_cast<Llamada*>(&expresion)) return tipoLlamada(*llamada);
+
+    return tipos::ERROR;
 }
+
+//checkeo 2
+// Inserta 'simbolo' en la tabla actual. Reporta (y devuelve false) si el
+// nombre es el de una clase o si ya estaba declarado en este mismo scope.
+bool AnalizadorSemantico::declarar(const Simbolo& simbolo, const Nodo& donde) {
+    if (simbolo.categoria != TipoSimbolo::Clase && jerarquia.existe(simbolo.nombre)) {
+        error(donde, comillas(simbolo.nombre) + " es el nombre de una clase y no se puede usar como " +
+                         tipoSimboloATexto(simbolo.categoria));
+        return false;
+    }
+    //checkeo semantico 2 - redeclaracion en el mismo scope
+    if (Simbolo* previo = actual->buscarLocal(simbolo.nombre)) {
+        error(donde, comillas(simbolo.nombre) + " ya fue declarado en este ambito (" + actual->nombre() + ")");
+        if (!previo->predefinido)
+            nota(previo->pos, static_cast<int>(simbolo.nombre.size()),
+                 "declaracion anterior de " + comillas(simbolo.nombre));
+        return false;
+    }
+    actual->insertar(simbolo);
+    return true;
+}
+
+// Reglas de los operadores binarios (sec. 5.2).
+//Checkeo semantico 3 - tipos incompatibles en expresiones (5 * True)
+TipoValor AnalizadorSemantico::tipoOpBinaria(OpBinaria& operacion) {
+    const TipoValor izq = tipoDe(*operacion.izq);
+    const TipoValor der = tipoDe(*operacion.der);
+    const std::string& op = operacion.operador;
+    auto reportar = [&](const std::string& detalle) {
+        error(operacion, "el operador " + comillas(op) + " no se puede usar entre " + comillas(izq) + " y " +
+                             comillas(der) + detalle);
+    };
+
+    // Si un operando ya tuvo un error no se reporta otro aqui: se devuelve el
+    // tipo que daria el operador con operandos correctos.
+    if (izq == tipos::ERROR || der == tipos::ERROR) {
+        if (op == "-" || op == "*" || op == "//" || op == "%") return tipos::INT;
+        if (op == "+") {
+            const TipoValor& otro = izq == tipos::ERROR ? der : izq;
+            return otro == tipos::INT || otro == tipos::STR ? otro : tipos::ERROR;
+        }
+        return tipos::BOOL; // and, or, comparaciones, is
+    }
+
+    if (op == "and" || op == "or") {
+        if (izq != tipos::BOOL || der != tipos::BOOL) reportar(" (necesita dos 'bool')");
+        return tipos::BOOL;
+    }
+    if (op == "+") {
+        if (izq == tipos::INT && der == tipos::INT) return tipos::INT;
+        if (izq == tipos::STR && der == tipos::STR) return tipos::STR;
+        const bool listaIzq = tipos::esLista(izq) || izq == tipos::EMPTY;
+        const bool listaDer = tipos::esLista(der) || der == tipos::EMPTY;
+        if (listaIzq && listaDer) {
+            if (izq == tipos::EMPTY) return der;
+            if (der == tipos::EMPTY) return izq;
+            return tipos::listaDe(jerarquia.unir(tipos::elementoDe(izq), tipos::elementoDe(der)));
+        }
+        reportar(" (suma int + int, une str + str o listas + listas)");
+        return izq == tipos::INT || der == tipos::INT ? tipos::INT : tipos::ERROR;
+    }
+    if (op == "-" || op == "*" || op == "//" || op == "%") {
+        if (izq != tipos::INT || der != tipos::INT) reportar(" (necesita dos 'int')");
+        return tipos::INT;
+    }
+    if (op == "<" || op == "<=" || op == ">" || op == ">=") {
+        if (izq != tipos::INT || der != tipos::INT) reportar(" (solo compara 'int')");
+        return tipos::BOOL;
+    }
+    if (op == "==" || op == "!=") {
+        if (izq != der || !tipos::esPrimitivo(izq)) reportar(" (compara dos int, dos bool o dos str)");
+        return tipos::BOOL;
+    }
+    if (op == "is") {
+        if (tipos::esPrimitivo(izq) || tipos::esPrimitivo(der)) reportar(" ('is' no se usa con int, bool ni str)");
+        return tipos::BOOL;
+    }
+    return tipos::ERROR;
+}
+
+//checkeo semantico 4 - Tipo incompatibles en asignaciones
 
 void AnalizadorSemantico::revisarSentencia(Nodo& sentencia) {
     if (auto* expr = dynamic_cast<SentenciaExpr*>(&sentencia)) {
@@ -402,6 +541,7 @@ void AnalizadorSemantico::revisarSentencia(Nodo& sentencia) {
         if (asignacion->objetivos.size() > 1 && valor == tipos::listaDe(tipos::NONE))
             error(*asignacion->valor, "en una asignacion multiple el valor no puede ser de tipo '[<None>]'");
         for (auto& objetivo : asignacion->objetivos) {
+            // x: int = 0 -> x = "hola"
             TipoValor destino = tipoDestino(*objetivo);
             if (!destino.empty() && !jerarquia.esAsignable(valor, destino))
                 error(*objetivo, "no se puede asignar un valor de tipo " + comillas(valor) + " " +
@@ -420,6 +560,7 @@ void AnalizadorSemantico::revisarSentencia(Nodo& sentencia) {
         if (iterable == tipos::STR) elemento = tipos::STR;
         else if (tipos::esLista(iterable)) elemento = tipos::elementoDe(iterable);
         else if (iterable != tipos::EMPTY && iterable != tipos::ERROR)
+            //checkeo bucles
             error(*para->iterable, "'for' solo puede recorrer una lista o un str, no un valor de tipo " +
                                        comillas(iterable));
         Identificador variable;
@@ -435,6 +576,7 @@ void AnalizadorSemantico::revisarSentencia(Nodo& sentencia) {
         if (!dentroDeFuncion) {
             error(retornar->pos, 6, "'return' solo se puede usar dentro de una funcion");
         } else if (!jerarquia.esAsignable(valor, retornoActual)) {
+            //checkeo semantico 8 - tipo de retorno incorrecto
             if (retornar->valor)
                 error(*retornar->valor, "la funcion debe devolver " + comillas(retornoActual) +
                                             ", pero este valor es de tipo " + comillas(valor));
@@ -445,6 +587,43 @@ void AnalizadorSemantico::revisarSentencia(Nodo& sentencia) {
     }
     // Pasar: no hay nada que revisar.
 }
+
+//checkeo semantico 5 - condieciones no booleana
+//toda condifcion sea de tipo bool
+void AnalizadorSemantico::revisarCondicion(Nodo& condicion, const char* sentencia) {
+    TipoValor tipo = tipoDe(condicion);
+    if (tipo != tipos::BOOL && tipo != tipos::ERROR)
+        error(condicion, std::string("la condicion del '") + sentencia + "' debe ser de tipo 'bool', no " +
+                             comillas(tipo));
+}
+
+// Revisa cantidad y tipo de los argumentos. 'desde' es 1 en metodos y
+// constructores: el primer parametro (self) no se escribe en la llamada.
+//Checkeo semantico 6 - cantidad y tipo de argumentos en llamadas a funciones y metodos
+void AnalizadorSemantico::revisarArgumentos(Llamada& llamada, const FirmaFuncion& firma, std::size_t desde,
+                                            const std::string& quien) {
+    std::vector<TipoValor> argumentos;
+    for (auto& argumento : llamada.argumentos) argumentos.push_back(tipoDe(*argumento));
+
+    // (un metodo mal declarado, sin self, tiene menos de 'desde' parametros)
+    const std::size_t esperados = firma.parametros.size() > desde ? firma.parametros.size() - desde : 0;
+    
+    //cantidad de argumentos incorrecta
+    if (argumentos.size() != esperados) {
+        error(llamada, quien + " espera " + plural(esperados, "argumento") + ", pero recibe " +
+                           std::to_string(argumentos.size()));
+        return;
+    }
+    for (std::size_t i = 0; i < argumentos.size(); ++i) {
+        //tipo o firma de argumentos incorrectos
+        const TipoValor& esperado = firma.parametros[desde + i];
+        if (!jerarquia.esAsignable(argumentos[i], esperado))
+            error(*llamada.argumentos[i], "el argumento " + std::to_string(i + 1) + " de " + quien +
+                                              " debe ser de tipo " + comillas(esperado) + ", pero es " +
+                                              comillas(argumentos[i]));
+    }
+}
+
 
 // true si toda ejecucion de 'sentencias' termina en un return: hay un return
 // directo o un if/else cuyas dos ramas siempre retornan.
@@ -528,141 +707,7 @@ TipoValor AnalizadorSemantico::tipoDe(Nodo& expresion) {
     return expresion.tipoInferido;
 }
 
-TipoValor AnalizadorSemantico::calcularTipo(Nodo& expresion) {
-    if (dynamic_cast<LitEntero*>(&expresion)) return tipos::INT;
-    if (dynamic_cast<LitBool*>(&expresion)) return tipos::BOOL;
-    if (dynamic_cast<LitTexto*>(&expresion)) return tipos::STR;
-    if (dynamic_cast<LitNone*>(&expresion)) return tipos::NONE;
 
-    if (auto* id = dynamic_cast<Identificador*>(&expresion)) {
-        Simbolo* simbolo = actual->buscar(id->nombre);
-        if (!simbolo) {
-            error(*id, comillas(id->nombre) + " no esta declarado");
-            return tipos::ERROR;
-        }
-        if (simbolo->categoria == TipoSimbolo::Funcion) {
-            error(*id, comillas(id->nombre) + " es una funcion: para usarla hay que llamarla, " + id->nombre + "(...)");
-            return tipos::ERROR;
-        }
-        if (simbolo->categoria == TipoSimbolo::Clase) {
-            error(*id, comillas(id->nombre) + " es una clase, no un valor: para crear un objeto escribe " +
-                           id->nombre + "()");
-            return tipos::ERROR;
-        }
-        return simbolo->tipo;
-    }
-
-    if (auto* lista = dynamic_cast<LitLista*>(&expresion)) {
-        if (lista->elementos.empty()) return tipos::EMPTY;
-        TipoValor elemento = tipoDe(*lista->elementos[0]);
-        for (std::size_t i = 1; i < lista->elementos.size(); ++i)
-            elemento = jerarquia.unir(elemento, tipoDe(*lista->elementos[i]));
-        return tipos::listaDe(elemento);
-    }
-
-    if (auto* unaria = dynamic_cast<OpUnaria*>(&expresion)) {
-        TipoValor operando = tipoDe(*unaria->operando);
-        const TipoValor esperado = unaria->operador == "not" ? tipos::BOOL : tipos::INT;
-        if (operando != esperado && operando != tipos::ERROR)
-            error(*unaria, "el operador " + comillas(unaria->operador) + " necesita un valor de tipo " +
-                               comillas(esperado) + ", no " + comillas(operando));
-        return esperado;
-    }
-
-    if (auto* binaria = dynamic_cast<OpBinaria*>(&expresion)) return tipoOpBinaria(*binaria);
-
-    if (auto* si = dynamic_cast<ExprSi*>(&expresion)) {
-        TipoValor entonces = tipoDe(*si->entonces);
-        revisarCondicion(*si->condicion, "if");
-        TipoValor sino = tipoDe(*si->sino);
-        return jerarquia.unir(entonces, sino);
-    }
-
-    if (auto* indice = dynamic_cast<Indice*>(&expresion)) {
-        TipoValor objeto = tipoDe(*indice->objeto);
-        TipoValor posicion = tipoDe(*indice->indice);
-        if (posicion != tipos::INT && posicion != tipos::ERROR)
-            error(*indice->indice, "el indice debe ser de tipo 'int', no " + comillas(posicion));
-        if (objeto == tipos::ERROR) return tipos::ERROR;
-        if (objeto == tipos::STR) return tipos::STR;
-        if (tipos::esLista(objeto)) return tipos::elementoDe(objeto);
-        error(*indice, "no se puede usar [] sobre un valor de tipo " + comillas(objeto));
-        return tipos::ERROR;
-    }
-
-    if (auto* miembro = dynamic_cast<Miembro*>(&expresion)) {
-        TipoValor objeto = tipoDe(*miembro->objeto);
-        const InfoClase* info = tipos::esLista(objeto) ? nullptr : jerarquia.buscar(objeto);
-        if (objeto == tipos::ERROR) return tipos::ERROR;
-        if (info && info->atributos.count(miembro->nombre)) return info->atributos.at(miembro->nombre);
-        if (info && info->metodos.count(miembro->nombre))
-            error(*miembro, comillas(miembro->nombre) + " es un metodo: para usarlo hay que llamarlo");
-        else
-            error(*miembro, "el tipo " + comillas(objeto) + " no tiene el atributo " + comillas(miembro->nombre));
-        return tipos::ERROR;
-    }
-
-    if (auto* llamada = dynamic_cast<Llamada*>(&expresion)) return tipoLlamada(*llamada);
-
-    return tipos::ERROR;
-}
-
-// Reglas de los operadores binarios (sec. 5.2).
-TipoValor AnalizadorSemantico::tipoOpBinaria(OpBinaria& operacion) {
-    const TipoValor izq = tipoDe(*operacion.izq);
-    const TipoValor der = tipoDe(*operacion.der);
-    const std::string& op = operacion.operador;
-    auto reportar = [&](const std::string& detalle) {
-        error(operacion, "el operador " + comillas(op) + " no se puede usar entre " + comillas(izq) + " y " +
-                             comillas(der) + detalle);
-    };
-
-    // Si un operando ya tuvo un error no se reporta otro aqui: se devuelve el
-    // tipo que daria el operador con operandos correctos.
-    if (izq == tipos::ERROR || der == tipos::ERROR) {
-        if (op == "-" || op == "*" || op == "//" || op == "%") return tipos::INT;
-        if (op == "+") {
-            const TipoValor& otro = izq == tipos::ERROR ? der : izq;
-            return otro == tipos::INT || otro == tipos::STR ? otro : tipos::ERROR;
-        }
-        return tipos::BOOL; // and, or, comparaciones, is
-    }
-
-    if (op == "and" || op == "or") {
-        if (izq != tipos::BOOL || der != tipos::BOOL) reportar(" (necesita dos 'bool')");
-        return tipos::BOOL;
-    }
-    if (op == "+") {
-        if (izq == tipos::INT && der == tipos::INT) return tipos::INT;
-        if (izq == tipos::STR && der == tipos::STR) return tipos::STR;
-        const bool listaIzq = tipos::esLista(izq) || izq == tipos::EMPTY;
-        const bool listaDer = tipos::esLista(der) || der == tipos::EMPTY;
-        if (listaIzq && listaDer) {
-            if (izq == tipos::EMPTY) return der;
-            if (der == tipos::EMPTY) return izq;
-            return tipos::listaDe(jerarquia.unir(tipos::elementoDe(izq), tipos::elementoDe(der)));
-        }
-        reportar(" (suma int + int, une str + str o listas + listas)");
-        return izq == tipos::INT || der == tipos::INT ? tipos::INT : tipos::ERROR;
-    }
-    if (op == "-" || op == "*" || op == "//" || op == "%") {
-        if (izq != tipos::INT || der != tipos::INT) reportar(" (necesita dos 'int')");
-        return tipos::INT;
-    }
-    if (op == "<" || op == "<=" || op == ">" || op == ">=") {
-        if (izq != tipos::INT || der != tipos::INT) reportar(" (solo compara 'int')");
-        return tipos::BOOL;
-    }
-    if (op == "==" || op == "!=") {
-        if (izq != der || !tipos::esPrimitivo(izq)) reportar(" (compara dos int, dos bool o dos str)");
-        return tipos::BOOL;
-    }
-    if (op == "is") {
-        if (tipos::esPrimitivo(izq) || tipos::esPrimitivo(der)) reportar(" ('is' no se usa con int, bool ni str)");
-        return tipos::BOOL;
-    }
-    return tipos::ERROR;
-}
 
 TipoValor AnalizadorSemantico::tipoLlamada(Llamada& llamada) {
     auto tiparArgumentos = [&] {
@@ -717,25 +762,3 @@ TipoValor AnalizadorSemantico::tipoLlamada(Llamada& llamada) {
     return tipos::ERROR;
 }
 
-// Revisa cantidad y tipo de los argumentos. 'desde' es 1 en metodos y
-// constructores: el primer parametro (self) no se escribe en la llamada.
-void AnalizadorSemantico::revisarArgumentos(Llamada& llamada, const FirmaFuncion& firma, std::size_t desde,
-                                            const std::string& quien) {
-    std::vector<TipoValor> argumentos;
-    for (auto& argumento : llamada.argumentos) argumentos.push_back(tipoDe(*argumento));
-
-    // (un metodo mal declarado, sin self, tiene menos de 'desde' parametros)
-    const std::size_t esperados = firma.parametros.size() > desde ? firma.parametros.size() - desde : 0;
-    if (argumentos.size() != esperados) {
-        error(llamada, quien + " espera " + plural(esperados, "argumento") + ", pero recibe " +
-                           std::to_string(argumentos.size()));
-        return;
-    }
-    for (std::size_t i = 0; i < argumentos.size(); ++i) {
-        const TipoValor& esperado = firma.parametros[desde + i];
-        if (!jerarquia.esAsignable(argumentos[i], esperado))
-            error(*llamada.argumentos[i], "el argumento " + std::to_string(i + 1) + " de " + quien +
-                                              " debe ser de tipo " + comillas(esperado) + ", pero es " +
-                                              comillas(argumentos[i]));
-    }
-}
